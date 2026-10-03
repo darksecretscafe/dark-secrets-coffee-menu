@@ -14,48 +14,51 @@
   <img class="brand-logo" src="assets/dark-secrets-logo.png" alt="Dark Secrets Coffee logo">
   <p>SAME BEANS • DIFFERENT STORIES</p>
 </header>
-
-<section class="visual">
-  <img src="assets/dark-secrets-products.jpg" alt="Dark Secrets featured drinks and takeaway bottles">
-</section>
-
-<section class="welcome">
-  <span>DARK SECRETS COFFEE</span>
-  <h1>What’s your<br>secret today?</h1>
-  <p>Choose your drink, check the price, then message us to order.</p>
-</section>
+<section class="visual"><img src="assets/dark-secrets-products.jpg" alt="Dark Secrets featured drinks and takeaway bottles"></section>
+<section class="welcome"><span>DARK SECRETS COFFEE</span><h1>What’s your<br>secret today?</h1><p>Choose your drinks, review your order, then message us to order.</p></section>
 
 <section class="menu">
   <div class="group">
     <h2>☕ Coffee</h2>
-    <div><span>Coffee Amerikano</span><b>₱100</b></div>
-    <div><span>Cafe Latte</span><b>₱115</b></div>
-    <div><span>Spanish Latte</span><b>₱125</b></div>
-    <div><span>White Chocolate Mocha</span><b>₱125</b></div>
-    <div><span>Caramel Machiatto</span><b>₱125</b></div>
+    <div class="menu-item" data-name="Coffee Amerikano" data-price="100"><span>Coffee Amerikano</span><b>₱100</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Cafe Latte" data-price="115"><span>Cafe Latte</span><b>₱115</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Spanish Latte" data-price="125"><span>Spanish Latte</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="White Chocolate Mocha" data-price="125"><span>White Chocolate Mocha</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Caramel Machiatto" data-price="125"><span>Caramel Machiatto</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
     <small>All of our coffee drinks are standard double-shot.</small>
   </div>
-
   <div class="group">
     <h2>◒ Non-Coffee</h2>
-    <div><span>Matcha Latte</span><b>₱130</b></div>
-    <div><span>Berries and Cream</span><b>₱100</b></div>
-    <div><span>Hot Chocolate</span><b>₱80</b></div>
+    <div class="menu-item" data-name="Matcha Latte" data-price="130"><span>Matcha Latte</span><b>₱130</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Berries and Cream" data-price="100"><span>Berries and Cream</span><b>₱100</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Hot Chocolate" data-price="80"><span>Hot Chocolate</span><b>₱80</b><button class="add-btn" type="button">+ ADD</button></div>
   </div>
-
-  <div class="addon"><span><small>ADD-ON</small>Sub Oat Milk</span><b>+₱30</b></div>
+  <div class="addon menu-item" data-name="Sub Oat Milk" data-price="30"><span><small>ADD-ON</small>Sub Oat Milk</span><b>+₱30</b><button class="add-btn" type="button">+ ADD</button></div>
 </section>
 
-<section class="take-banner">
-  <img src="assets/takeaway-banner.jpg" alt="Dark Secrets Take It With You bottled takeaway drinks">
-</section>
-
-<section class="cta">
-  <span>READY TO ORDER?</span>
-  <h2>Message Dark Secrets.</h2>
-  <a href="https://m.me/DarkSecretsCoffee">ORDER VIA MESSENGER →</a>
-
-</section>
+<section class="take-banner"><img src="assets/takeaway-banner.jpg" alt="Dark Secrets Take It With You bottled takeaway drinks"></section>
+<section class="cta"><span>READY TO ORDER?</span><h2>Build your order.</h2><button id="openOrder" class="order-main-btn" type="button">🛒 VIEW ORDER <em id="ctaCount">0</em></button><p>Select drinks above, then review your order before opening Messenger.</p></section>
 </main>
+
+<button id="cartBar" class="cart-bar" type="button" hidden><span>🛒 View Order</span><strong><span id="cartCount">0</span> item(s) • ₱<span id="cartTotal">0</span></strong></button>
+
+<div id="orderModal" class="modal" aria-hidden="true">
+  <div class="modal-backdrop" data-close></div>
+  <section class="order-sheet" role="dialog" aria-modal="true" aria-labelledby="orderTitle">
+    <button class="close-btn" type="button" data-close aria-label="Close">×</button>
+    <span class="eyebrow">DARK SECRETS COFFEE</span>
+    <h2 id="orderTitle">Your Order</h2>
+    <div id="orderLines" class="order-lines"></div>
+    <div class="order-total"><span>Total</span><strong>₱<span id="modalTotal">0</span></strong></div>
+    <div class="customer-fields">
+      <label>Name <small>(optional)</small><input id="customerName" type="text" placeholder="Your name"></label>
+      <label>Pickup time <small>(optional)</small><input id="pickupTime" type="time"></label>
+      <label>Notes <small>(optional)</small><textarea id="orderNotes" rows="3" placeholder="e.g. less ice, no straw"></textarea></label>
+    </div>
+    <button id="messengerOrder" class="messenger-btn" type="button">COPY ORDER & OPEN MESSENGER →</button>
+    <p id="copyHint" class="copy-hint">Your order will be copied. Paste it into Messenger, then send.</p>
+  </section>
+</div>
+<script src="order.js"></script>
 </body>
 </html>
