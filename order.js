@@ -85,3 +85,56 @@ document.getElementById('messengerOrder').onclick=async()=>{
   setTimeout(()=>{window.location.href='https://m.me/DarkSecretsCoffee';},350);
 };
 updateUI();
+
+
+/* Cross-browser clipboard fallback */
+async function dsCopyText(text){
+  if (navigator.clipboard && window.isSecureContext){
+    try { await navigator.clipboard.writeText(text); return true; } catch(e){}
+  }
+  try{
+    const t=document.createElement('textarea');
+    t.value=text; t.setAttribute('readonly','');
+    t.style.position='fixed'; t.style.left='-9999px';
+    document.body.appendChild(t); t.select(); t.setSelectionRange(0,t.value.length);
+    const ok=document.execCommand('copy');
+    document.body.removeChild(t);
+    return !!ok;
+  }catch(e){ return false; }
+}
+function dsShowFallback(text){
+  const box=document.getElementById('orderTextFallback');
+  const area=document.getElementById('generatedOrderText');
+  if(!box||!area)return;
+  area.value=text; box.hidden=false;
+  area.style.height='auto'; area.style.height=Math.min(Math.max(area.scrollHeight,140),320)+'px';
+}
+document.getElementById('copyOrderOnly')?.addEventListener('click',async function(){
+  const area=document.getElementById('generatedOrderText');
+  const ok=await dsCopyText(area.value);
+  if(ok){this.textContent='✓ COPIED!';setTimeout(()=>this.textContent='COPY ORDER',1600);}
+  else{area.focus();area.select();area.setSelectionRange(0,area.value.length);alert('Automatic copy is blocked. Tap and hold the selected order, then choose Copy.');}
+});
+
+
+const dsCombinedBtn = Array.from(document.querySelectorAll('button,a')).find(el => /copy order.*open messenger/i.test((el.textContent||'').trim()));
+if(dsCombinedBtn){
+  dsCombinedBtn.addEventListener('click',async function(e){
+    e.preventDefault(); e.stopImmediatePropagation();
+    let text='';
+    if(typeof buildOrderMessage==='function') text=buildOrderMessage();
+    else if(typeof buildMessage==='function') text=buildMessage();
+    else if(typeof getOrderText==='function') text=getOrderText();
+    if(!text) return;
+    dsShowFallback(text);
+    const ok=await dsCopyText(text);
+    if(ok){
+      this.textContent='✓ COPIED! OPENING MESSENGER…';
+      setTimeout(()=>location.href='https://m.me/DarkSecretsCoffee',650);
+    }else{
+      this.textContent='COPY BLOCKED — USE COPY ORDER BELOW';
+      const area=document.getElementById('generatedOrderText');
+      area?.focus(); area?.select(); area?.setSelectionRange(0,area.value.length);
+    }
+  },true);
+}

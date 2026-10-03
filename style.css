@@ -21,3 +21,10 @@
 .order-method legend{font-size:12px;font-weight:700;margin-bottom:7px;width:100%}
 .order-method label{display:flex;align-items:center;gap:7px;background:#fffaf4;border:1px solid #c9b7a7;border-radius:999px;padding:10px 14px;cursor:pointer;font-weight:600}
 .order-method input{width:auto!important;margin:0!important;accent-color:#2a1c15}
+
+.order-text-fallback{margin:14px 0;padding:14px;background:#fffaf4;border:1px solid #c9b7a7;border-radius:14px}
+.order-text-fallback p{font-size:12px;line-height:1.45;margin:0 0 10px}
+.order-text-fallback textarea{width:100%;min-height:140px;box-sizing:border-box;border:1px solid #c9b7a7;border-radius:10px;padding:10px;background:#fff;color:#2a1c15;font:13px/1.45 system-ui,-apple-system,sans-serif;resize:vertical}
+.order-text-fallback button,.order-text-fallback a{display:block;width:100%;box-sizing:border-box;margin-top:9px;padding:12px;border-radius:999px;text-align:center;font-weight:800;text-decoration:none}
+.order-text-fallback button{border:0;background:#2a1c15;color:#fff}
+.order-text-fallback a{border:1px solid #2a1c15;color:#2a1c15;background:transparent}
