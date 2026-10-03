@@ -52,7 +52,11 @@
     <div class="order-total"><span>Total</span><strong>₱<span id="modalTotal">0</span></strong></div>
     <div class="customer-fields">
       <label>Name <small>(optional)</small><input id="customerName" type="text" placeholder="Your name"></label>
-      <label>Pickup time <small>(optional)</small><input id="pickupTime" type="time"></label>
+      <fieldset class="order-method">
+        <legend>Order Method</legend>
+        <label><input type="radio" name="orderMethod" value="Pick Up"> <span>Pick Up</span></label>
+        <label><input type="radio" name="orderMethod" value="Delivery"> <span>Delivery</span></label>
+      </fieldset>
       <label>Notes <small>(optional)</small><textarea id="orderNotes" rows="3" placeholder="e.g. less ice, no straw"></textarea></label>
     </div>
     <button id="messengerOrder" class="messenger-btn" type="button">COPY ORDER & OPEN MESSENGER →</button>

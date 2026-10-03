@@ -59,14 +59,14 @@ document.querySelectorAll('[data-close]').forEach(x=>x.onclick=closeModal);
 
 function orderText(){
   const name=document.getElementById('customerName').value.trim();
-  const time=document.getElementById('pickupTime').value;
+  const method=document.querySelector('input[name="orderMethod"]:checked')?.value || '';
   const notes=document.getElementById('orderNotes').value.trim();
   const {total}=totals();
   const out=['Hi Dark Secrets! I’d like to order:',''];
   cart.forEach(i=>out.push(`• ${i.qty}× ${i.name} — ${peso(i.qty*i.price)}`));
   out.push('',`Total: ${peso(total)}`);
   if(name) out.push(`Name: ${name}`);
-  if(time) out.push(`Pickup time: ${time}`);
+  if(method) out.push(`Order Method: ${method}`);
   if(notes) out.push(`Notes: ${notes}`);
   return out.join('\n');
 }
