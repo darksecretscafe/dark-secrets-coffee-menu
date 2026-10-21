@@ -1,0 +1,262 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#241912">
+<title>Dark Secrets Coffee | Admin</title>
+<link rel="stylesheet" href="admin.css">
+<link rel="stylesheet" href="admin-delivery.css">
+<link rel="stylesheet" href="admin-payment.css">
+<link rel="manifest" href="admin-manifest.webmanifest">
+<link rel="icon" href="admin-icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="admin-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DS Admin">
+<style>
+.ds-admin-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 16px}
+.ds-admin-tabs .ds-tab{background:#f8f2ea;color:#302018;border:1px solid #cbb6a4;border-radius:12px;padding:13px 17px;font-weight:700;cursor:pointer;flex:1 1 150px}
+.ds-admin-tabs .ds-tab.active{background:#2b1c15;color:#fff;border-color:#2b1c15}
+.ds-admin-tabs .ds-tab:focus-visible{outline:3px solid #a87850;outline-offset:2px}
+.ds-tab-panel[hidden]{display:none!important}
+.ds-tab-panel{min-width:0}
+/* Keep legacy notification elements for admin.js, but remove the duplicate bar. */
+.pending-notify{display:none!important}
+.stats>div:first-child{cursor:pointer;transition:filter .15s ease,transform .15s ease}
+.stats>div:first-child:hover{filter:brightness(1.14)}
+.stats>div:first-child:focus-visible{outline:3px solid #a87850;outline-offset:3px}
+.ds-cancellation-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;padding:2px 7px;margin-left:6px;border-radius:999px;background:#a12626;color:white;font-size:12px;font-weight:800}
+.ds-cancellation-badge[hidden]{display:none!important}
+@media(max-width:540px){.ds-admin-tabs{gap:6px}.ds-admin-tabs .ds-tab{flex:1 1 100px;padding:12px 7px;font-size:12px}}
+/* Refund management: compact summary cards, details only when expanded. */
+.ds-refund-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ds-refund-list{display:grid;gap:12px;margin-top:16px}
+.ds-refund-card{border:1px solid #decfc0;border-radius:15px;background:#fffaf5;padding:17px;box-sizing:border-box}
+.ds-refund-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.ds-refund-head h3{margin:0}
+.ds-refund-meta{color:#71594c;font-size:13px;margin:8px 0}
+.ds-refund-amount{font-size:24px;font-weight:800;margin:10px 0}
+.ds-refund-pill{background:#f0e1ce;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700}
+.ds-refund-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.ds-refund-details{margin-top:14px;padding-top:14px;border-top:1px solid #e5d8c9}
+.ds-refund-details[hidden]{display:none!important}
+.ds-refund-details p{overflow-wrap:anywhere}
+.ds-refund-warning{font-size:13px;color:#824620}
+.ds-refund-field{display:grid;gap:5px;margin:12px 0}
+.ds-refund-field input{max-width:420px}
+/* Keep confirmation checkbox beside its text, not centered as a full-width field. */
+.ds-refund-field.ds-refund-check{display:flex;align-items:flex-start;justify-content:flex-start;gap:9px;max-width:100%;cursor:pointer}
+.ds-refund-check input[type="checkbox"]{flex:0 0 auto;width:18px;height:18px;min-width:18px;margin:2px 0 0;padding:0;accent-color:#38251b}
+.ds-refund-check span{flex:1;min-width:0;line-height:1.45}
+.ds-refund-badge{display:inline-flex;min-width:20px;justify-content:center;margin-left:6px;padding:2px 7px;border-radius:999px;background:#a12626;color:#fff;font-size:12px}
+.ds-refund-badge[hidden]{display:none!important}
+/* Match Order History: full-width cancellation cards and simple heading. */
+#panelCancellations #cancellationManagement{width:100%;max-width:none;box-sizing:border-box;margin:0;padding:0;background:transparent;border:0;box-shadow:none}
+#panelCancellations #cancellationList,#panelCancellations #cancellationHistoryList{width:100%;max-width:none}
+#panelCancellations .ordercard{width:100%;max-width:none;box-sizing:border-box;margin:12px 0}
+#panelCancellations .ds-cancel-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#panelCancellations .ds-cancel-card-head h3{margin:0}
+#panelCancellations .ds-cancel-tag{border-radius:999px;background:#e9d9ca;color:#291b14;padding:5px 10px;font-size:12px;font-weight:700}
+#panelCancellations .ds-cancel-detail{font-size:13px;color:#765748;margin:10px 0}
+#panelCancellations .ds-cancel-reason{padding:12px 0;border-top:1px dotted #d8c7b7;border-bottom:1px dotted #d8c7b7;white-space:pre-wrap;overflow-wrap:anywhere}
+#panelCancellations .ds-cancel-section-title{margin:24px 0 8px}
+#panelCancellations #cancellationHistory summary{padding:14px 0!important}
+</style>
+</head>
+<body>
+<main class="shell">
+<header>
+<div class="brand">
+<img src="assets/dark-secrets-logo.png" alt="Dark Secrets Coffee">
+<div>
+<small>DARK SECRETS COFFEE</small>
+<h1>Order Dashboard</h1>
+</div>
+</div>
+<button id="signout" class="ghost" hidden>Sign out</button>
+</header>
+
+<section id="setup" class="panel" hidden>
+<h2>Connect Supabase</h2>
+<p>Set your project URL and public publishable / anon key in <code>supabase-config.js</code>. Never put a service_role or secret key in a public repository.</p>
+</section>
+
+<section id="login" class="panel" hidden>
+<h2>Owner sign in</h2>
+<p>Only authorized Dark Secrets Coffee admins can view orders.</p>
+<form id="loginForm">
+<label>Email<input id="email" type="email" autocomplete="username" required></label>
+<label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+<button type="submit" id="loginButton">Sign in</button>
+</form>
+</section>
+
+<section id="dashboard" hidden>
+<div class="push-setup" id="pushSetup" hidden>
+<div>
+<strong>📲 Android lock-screen alerts</strong>
+<p id="pushStatus">Push notifications are not enabled on this device.</p>
+</div>
+<button id="enablePush" type="button" class="ghost">Enable push notifications</button>
+</div>
+
+<div class="toolbar">
+<div>
+<h2>Incoming orders</h2>
+<p>Orders from Supabase</p>
+</div>
+<div class="toolbar-buttons">
+<button id="soundToggle" class="ghost" type="button" aria-pressed="false">🔇 Enable sound</button>
+<button id="refresh" class="ghost">↻ Refresh</button>
+</div>
+</div>
+
+<div class="stats">
+<div id="pendingStatCard" role="button" tabindex="0" aria-label="Show pending orders"><small>Pending</small><strong id="pendingCount">0</strong></div>
+<div id="progressStatCard" role="button" tabindex="0" aria-label="Show in-progress orders"><small>In progress</small><strong id="progressCount">0</strong></div>
+<div id="completedStatCard" role="button" tabindex="0" aria-label="Show completed orders"><small>Completed</small><strong id="completedCount">0</strong></div>
+</div>
+
+<section class="pending-notify" aria-label="Pending order notifications">
+<button id="pendingBell" type="button" class="pending-bell" aria-expanded="false" aria-controls="pendingNotifications">🔔 Pending orders <span id="pendingBadge" class="pending-badge">0</span></button>
+<div id="pendingNotifications" class="pending-notifications" hidden>
+<h3>Orders awaiting acceptance</h3>
+<div id="pendingNotificationList"></div>
+<p class="pending-note">Updates automatically while the admin is open.</p>
+</div>
+</section>
+
+<nav class="ds-admin-tabs" aria-label="Dashboard sections" role="tablist">
+<button type="button" id="tabActive" class="ds-tab active" role="tab" aria-selected="true" aria-controls="panelActive">Active Orders</button>
+<button type="button" id="tabHistory" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelHistory">Order History <span id="tabHistoryCount">(0)</span></button>
+<button type="button" id="tabCancellations" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelCancellations">Cancellations <span id="tabCancellationCount" class="ds-cancellation-badge" aria-label="Pending cancellation requests" hidden></span></button>
+<button type="button" id="tabRefunds" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelRefunds">Refunds <span id="tabRefundCount" class="ds-refund-badge" hidden></span></button>
+</nav>
+<section id="panelActive" class="ds-tab-panel" role="tabpanel" aria-labelledby="tabActive">
+<div class="filters">
+<label for="statusFilter">Show</label>
+<select id="statusFilter">
+<option value="active">Active orders</option>
+<option value="Pending">Pending</option>
+<option value="progress">In Progress (all stages)</option>
+<option value="Accepted">Accepted</option>
+<option value="Preparing">Preparing</option>
+<option value="Ready">Ready</option>
+<option value="Out for Delivery">Out for Delivery</option>
+</select>
+</div>
+<div id="orders" class="orders"></div>
+</section>
+<section id="panelHistory" class="ds-tab-panel" role="tabpanel" aria-labelledby="tabHistory" hidden>
+<h2>Order History (<span id="orderHistoryCount">0</span>)</h2>
+<p>Completed, Cancelled and Declined orders from the 100 most recent orders.</p>
+<div class="ds-history-tools">
+ <div class="ds-history-filters" role="group" aria-label="Order history status">
+  <button type="button" class="ds-history-filter selected" data-history-status="All" aria-pressed="true">All</button>
+  <button type="button" class="ds-history-filter" data-history-status="Completed" aria-pressed="false">Completed</button>
+  <button type="button" class="ds-history-filter" data-history-status="Declined" aria-pressed="false">Declined</button>
+  <button type="button" class="ds-history-filter" data-history-status="Cancelled" aria-pressed="false">Cancelled</button>
+  <button type="button" class="ds-history-filter" data-history-status="Refunded" aria-pressed="false">Refunded</button>
+ </div>
+ <label for="historySearch">Search by order number or customer
+ <input id="historySearch" type="search" placeholder="Search orders…" autocomplete="off"></label>
+</div>
+<div id="historyOrders" class="orders"></div>
+</section>
+<section id="panelCancellations" class="ds-tab-panel" role="tabpanel" aria-labelledby="tabCancellations" hidden>
+<section id="cancellationManagement" class="panel" aria-label="Cancellation requests">
+<h2>Cancellation Requests</h2>
+<p>Pending requests: <strong id="cancellationCount" aria-live="polite">0</strong></p>
+<p id="cancellationMessage" role="status" aria-live="polite">Sign in to view pending requests.</p>
+<button type="button" id="cancellationRefresh" class="ghost">↻ Refresh requests</button>
+<div id="cancellationList"></div>
+</section>
+</section>
+
+<section id="panelRefunds" class="ds-tab-panel" role="tabpanel" aria-labelledby="tabRefunds" hidden>
+<div class="ds-refund-toolbar">
+ <div><h2>Refund Management</h2><p>Approved paid cancellations · Manual GCash/Maya refunds only</p></div>
+ <button type="button" id="refundRefresh" class="ghost">↻ Refresh refunds</button>
+</div>
+<p id="refundMessage" role="status" aria-live="polite">Sign in to view refunds.</p>
+<div id="refundList" class="ds-refund-list"></div>
+</section>
+
+<p id="message" role="status" aria-live="polite"></p>
+<footer>Admin access only</footer>
+</main>
+
+<script>
+(() => {
+ const names=['Active','History','Cancellations','Refunds'];
+ function selectTab(name){
+  if(!names.includes(name))return;
+  for(const item of names){
+   const button=document.getElementById('tab'+item);
+   const panel=document.getElementById('panel'+item);
+   const selected=item===name;
+   button.classList.toggle('active',selected);
+   button.setAttribute('aria-selected',String(selected));
+   panel.hidden=!selected;
+  }
+ }
+ window.DS_selectAdminTab=selectTab;
+ names.forEach(name=>document.getElementById('tab'+name).addEventListener('click',()=>selectTab(name)));
+ const pendingCard=document.getElementById('pendingStatCard');
+ function showPending(){
+  selectTab('Active');
+  const filter=document.getElementById('statusFilter');
+  filter.value='Pending';
+  filter.dispatchEvent(new Event('change',{bubbles:true}));
+ }
+ pendingCard.addEventListener('click',showPending);
+ pendingCard.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();showPending();}});
+ function linkStatCard(id, tab, filterId, value){
+  const card=document.getElementById(id);
+  const go=()=>{selectTab(tab);const filter=document.getElementById(filterId);if(filter){filter.value=value;filter.dispatchEvent(new Event('change',{bubbles:true}));}if(tab==='History'){document.querySelector(`[data-history-status="${value}"]`)?.click();}};
+  card.addEventListener('click',go);
+  card.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();go();}});
+ }
+ linkStatCard('progressStatCard','Active','statusFilter','progress');
+ linkStatCard('completedStatCard','History',null,'Completed');
+ const historyCount=document.getElementById('orderHistoryCount');
+ const cancellationCount=document.getElementById('cancellationCount');
+ const historyBadge=document.getElementById('tabHistoryCount');
+ const cancellationBadge=document.getElementById('tabCancellationCount');
+ const sync=()=>{
+  historyBadge.textContent='('+historyCount.textContent+')';
+  const n=Number(cancellationCount.textContent)||0;
+  cancellationBadge.textContent=n?String(n):'';
+  cancellationBadge.hidden=n===0;
+  document.getElementById('tabCancellations').setAttribute('aria-label',n?`Cancellations: ${n} pending requests`:'Cancellations: no pending requests');
+ };
+ new MutationObserver(sync).observe(historyCount,{childList:true,characterData:true,subtree:true});
+ new MutationObserver(sync).observe(cancellationCount,{childList:true,characterData:true,subtree:true});
+ sync();
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabase-config.js"></script>
+<script src="push-config.js"></script>
+<script src="admin.js?v=6"></script>
+<script src="admin-delivery.js"></script>
+<script src="admin-payment.js?v=2"></script>
+<script src="admin-section-order.js"></script>
+<script src="admin-paid-guard.js?v=1"></script>
+<script src="admin-cancellation.js?v=4"></script>
+<script src="admin-refunds.js?v=76"></script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./admin-sw.js').catch(err => {
+      console.warn('Admin install support unavailable:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>

@@ -70,3 +70,22 @@
 .packaging-row strong{display:block;font-size:13px}
 .packaging-row small{display:block;font-size:12px;color:#79675b;margin-top:3px}
 .packaging-row .qty{flex-shrink:0}
+
+.oat-note{font-size:13px;color:#655548;margin:12px 0 20px;line-height:1.5}
+
+/* Per-drink customization dialog */
+.customize-sheet{max-width:520px}.custom-label{display:block;font-size:13px;font-weight:700;margin:18px 0 8px}.custom-select{width:100%;padding:13px;border:1px solid #b9a595;border-radius:12px;background:#fffaf4;color:#281c15;font:15px Arial,sans-serif}.custom-oat{display:flex;align-items:center;gap:10px;margin:18px 0;font-size:14px;font-weight:600}.custom-oat[hidden]{display:none}.custom-oat input{width:20px;height:20px;accent-color:#38251b}.custom-quantity{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #d6c9bd;padding:18px 0}.custom-add{width:100%;margin-top:6px}.custom-error{color:#a33224;font-size:12px;min-height:1em}.order-line{align-items:center}
+
+/* Phase 2: payment deferred until the delivery fee is confirmed */
+.delivery-payment-notice{background:#fffaf4;border:1px solid #c9b7a7;border-radius:12px;padding:14px;color:#34231a;line-height:1.5}
+.delivery-payment-notice strong{display:block;font-size:13px}
+.delivery-payment-notice p{margin:7px 0;font-size:12px}
+.delivery-payment-notice small{display:block;font-size:11px;line-height:1.5}
+
+.packaging-hint{font-size:13px;color:#66584e;line-height:1.5;margin:14px 0}.custom-quantity span small{display:block;color:#776a60;font-size:12px;margin-top:4px}.custom-quantity+.custom-quantity{padding-top:14px}
+
+/* Clear primary action in drink customization modal */
+.customize-sheet .custom-add{display:block;width:100%;min-height:52px;margin-top:16px;padding:15px 24px;border:1px solid #38251b;border-radius:12px;background:#38251b;color:#fffaf4;font-size:12px;font-weight:800;letter-spacing:1.2px;text-align:center;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.customize-sheet .custom-add:hover{background:#553a2a}
+.customize-sheet .custom-add:active{transform:translateY(1px)}
+.customize-sheet .custom-add:focus-visible{outline:3px solid #a98668;outline-offset:3px}
