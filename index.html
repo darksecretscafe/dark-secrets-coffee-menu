@@ -6,11 +6,23 @@
 <meta name="theme-color" content="#f5efe6">
 <title>Dark Secrets Coffee | Digital Menu</title>
 <meta name="description" content="Dark Secrets Coffee digital menu">
-<link rel="stylesheet" href="style.css?v=phase1-delivery-only2">
+<link rel="stylesheet" href="style.css?v=payment-phase1-20261015">
+<link rel="stylesheet" href="tracking.css?v=messenger-fix3">
+<style>
+/* Show only the receipt when checkout has succeeded. */
+#orderModal.confirmation-active > .order-sheet > .eyebrow,
+#orderModal.confirmation-active > .order-sheet > #orderTitle,
+#orderModal.confirmation-active > .order-sheet > #orderLines,
+#orderModal.confirmation-active > .order-sheet > .order-total {
+  display: none;
+}
+</style>
+
 </head>
 <body>
 <main>
 <header class="brand">
+  <nav class="tracking-nav" aria-label="Order tracking"><button id="myOrdersBtn" type="button">📦 MY ORDERS <span id="savedOrdersCount"></span></button></nav>
   <img class="brand-logo" src="assets/dark-secrets-logo.png" alt="Dark Secrets Coffee logo">
   <p>SAME BEANS • DIFFERENT STORIES</p>
 </header>
@@ -20,11 +32,11 @@
 <section class="menu">
   <div class="group">
     <h2>☕ Coffee</h2>
-    <div class="menu-item" data-name="Coffee Amerikano" data-price="100" data-drink="true"><span>Coffee Amerikano</span><b>₱100</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Coffee Americano" data-price="100" data-drink="true"><span>Coffee Americano</span><b>₱100</b><button class="add-btn" type="button">+ ADD</button></div>
     <div class="menu-item" data-name="Cafe Latte" data-price="115" data-drink="true"><span>Cafe Latte</span><b>₱115</b><button class="add-btn" type="button">+ ADD</button></div>
     <div class="menu-item" data-name="Spanish Latte" data-price="125" data-drink="true"><span>Spanish Latte</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
     <div class="menu-item" data-name="White Chocolate Mocha" data-price="125" data-drink="true"><span>White Chocolate Mocha</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
-    <div class="menu-item" data-name="Caramel Machiatto" data-price="125" data-drink="true"><span>Caramel Machiatto</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
+    <div class="menu-item" data-name="Caramel Macchiato" data-price="125" data-drink="true"><span>Caramel Macchiato</span><b>₱125</b><button class="add-btn" type="button">+ ADD</button></div>
     <small>All of our coffee drinks are standard double-shot.</small>
   </div>
   <div class="group">
@@ -33,13 +45,29 @@
     <div class="menu-item" data-name="Berries and Cream" data-price="100" data-drink="true"><span>Berries and Cream</span><b>₱100</b><button class="add-btn" type="button">+ ADD</button></div>
     <div class="menu-item" data-name="Hot Chocolate" data-price="80" data-drink="true"><span>Hot Chocolate</span><b>₱80</b><button class="add-btn" type="button">+ ADD</button></div>
   </div>
-  <div class="addon menu-item" data-name="Sub Oat Milk" data-price="30"><span><small>ADD-ON</small>Sub Oat Milk</span><b>+₱30</b><button class="add-btn" type="button">+ ADD</button></div>
+  <p class="oat-note">🌾 Sub Oat Milk (+₱30) is available for eligible milk-based drinks. Select it when customizing your order.</p>
 </section>
 
 <section class="take-banner"><img src="assets/takeaway-banner.jpg" alt="Dark Secrets Take It With You bottled takeaway drinks"></section>
 <section class="cta"><span>READY TO ORDER?</span><h2>Build your order.</h2><button id="openOrder" class="order-main-btn" type="button">🛒 VIEW ORDER <em id="ctaCount">0</em></button><p id="ctaSummary">Select drinks above, then complete the checkout details.</p></section>
 </main>
 
+
+<div id="customizeModal" class="modal" aria-hidden="true">
+ <div class="modal-backdrop" data-custom-close></div>
+ <section class="order-sheet customize-sheet" role="dialog" aria-modal="true" aria-labelledby="customName">
+  <button type="button" class="close-btn" data-custom-close aria-label="Close">×</button>
+  <span class="eyebrow">CUSTOMIZE YOUR DRINK</span>
+  <h2 id="customName">Drink</h2>
+  <p class="packaging-hint">Set the quantity for each packaging. You can reduce either to zero.</p>
+  <label id="customOatRow" class="custom-oat"><input type="checkbox" id="customOat"> Sub Oat Milk (+₱30)</label>
+  <div class="custom-quantity"><span><strong>Regular Cup</strong><small>Standard price</small></span><div class="qty"><button type="button" id="customCupMinus" aria-label="Remove one regular cup">−</button><b id="customCupQty">0</b><button type="button" id="customCupPlus" aria-label="Add one regular cup">+</button></div></div>
+  <div class="custom-quantity"><span><strong>Takeaway Bottle</strong><small>+₱15 each</small></span><div class="qty"><button type="button" id="customBottleMinus" aria-label="Remove one takeaway bottle">−</button><b id="customBottleQty">0</b><button type="button" id="customBottlePlus" aria-label="Add one takeaway bottle">+</button></div></div>
+  <div class="order-total"><span>Drinks subtotal</span><strong id="customPrice">₱0</strong></div>
+  <p id="customError" class="custom-error" role="alert"></p>
+  <button id="customAdd" class="order-main-btn custom-add" type="button">ADD TO CART</button>
+ </section>
+</div>
 
 <div id="orderModal" class="modal" aria-hidden="true">
   <div class="modal-backdrop" data-close></div>
@@ -48,7 +76,7 @@
     <span class="eyebrow">DARK SECRETS COFFEE</span>
     <h2 id="orderTitle">Your Order</h2>
     <div id="orderLines" class="order-lines"></div>
-    <div class="order-total"><span>Total</span><strong>₱<span id="modalTotal">0</span></strong></div>
+    <div class="order-total"><span>Drinks subtotal</span><strong>₱<span id="modalTotal">0</span></strong></div>
     <div id="checkoutForm" class="checkout-step">
       <div class="checkout-heading"><h3>Checkout</h3><span>COMING SOON</span></div>
       <div class="customer-fields">
@@ -59,15 +87,11 @@
           <div class="pin-location-box"><div><strong>Exact Pin Location <span class="required-mark">*</span></strong><small>Required for delivery</small></div><button id="useLocation" class="location-btn" type="button">📍 USE MY LOCATION</button><p id="locationStatus">No pin location added yet.</p><p id="pinError" class="pin-error" role="alert" hidden>Please add your GPS pin before placing an order.</p><a id="viewPin" class="view-pin" href="#" target="_blank" rel="noopener" hidden>VIEW PIN ON MAP ↗</a></div>
           <label>Landmark <small>(optional)</small><input id="deliveryLandmark" type="text" maxlength="50" placeholder="e.g. near church, gate color"></label>
         </div>
-        <fieldset class="payment-method" id="paymentField">
-          <legend>Payment Method <span class="required-mark">*</span></legend>
-          <label><input type="radio" name="paymentMethod" value="Cash"> Cash</label>
-          <label><input type="radio" name="paymentMethod" value="GCash"> GCash</label>
-          <label><input type="radio" name="paymentMethod" value="Maya"> Maya</label>
-          <span class="field-error">Please choose a payment method.</span>
-        </fieldset>
+        <div class="delivery-payment-notice" role="note"><strong>🚚 Delivery via Lalamove or GrabExpress</strong><p>Submit your order first. The owner will check the courier fee and confirm your final total before you pay.</p><small>Payment options (GCash / Maya) will be shown on your private tracking page after the delivery fee is confirmed.</small></div>
         <label>Notes <small>(optional)</small><textarea id="orderNotes" rows="3" maxlength="150" placeholder="e.g. less ice, no straw"></textarea><span id="notesCount" class="char-count">0 / 150</span></label>
       </div>
+      <div id="turnstileMount" class="turnstile-mount" aria-label="Bot verification"></div>
+      <p id="submitStatus" role="status" aria-live="polite"></p>
       <div class="checkout-actions">
         <button id="placeOrder" class="place-order-btn" type="button" disabled aria-disabled="true">🚧 ONLINE ORDERING — UNDER CONSTRUCTION</button>
         <button id="messengerOrder" class="secondary-order-btn" type="button">COPY ORDER & OPEN MESSENGER</button>
@@ -78,12 +102,25 @@
       <div class="confirmation-icon">✓</div>
       <span class="phase-badge">COMING SOON</span>
       <h3>Order looks good.</h3>
-      <p>The checkout flow passed. In Phase 2, this is where the order will be saved and sent to the owner's admin page.</p>
+      <p>Delivery fee is being calculated. Please wait for final payment instructions.</p>
       <div id="confirmationCard" class="confirmation-card"></div>
-      <button id="newTestOrder" class="new-order-btn" type="button">CREATE ANOTHER TEST ORDER</button>
+      <div id="trackingActions" class="tracking-actions" hidden><a id="trackOrderLink" class="tracking-primary" href="track.html">TRACK MY ORDER ↗</a><button id="copyTrackingLink" type="button">COPY TRACKING LINK</button><p>Keep your private link safe. Anyone with it can view your order status.</p></div>
+      <button id="newTestOrder" class="new-order-btn" type="button">CREATE ANOTHER ORDER</button>
     </div>
   </section>
 </div>
-<script src="order.js?v=phase1-delivery-only2"></script>
+<div id="myOrdersModal" class="modal" aria-hidden="true"><div class="modal-backdrop" data-my-orders-close></div><section class="order-sheet" role="dialog" aria-modal="true" aria-labelledby="myOrdersTitle"><button class="close-btn" type="button" data-my-orders-close aria-label="Close">×</button><span class="eyebrow">DARK SECRETS COFFEE</span><h2 id="myOrdersTitle">My Orders</h2><p class="my-orders-note">Saved only on this browser. Keep your tracking links if you switch devices.</p><div id="myOrdersList"></div></section></div>
+<div class="messenger-widget" aria-label="Messenger support">
+  <span class="messenger-tip" id="messengerTip">Need help? 👋</span>
+  <a class="floating-messenger" href="https://m.me/DarkSecretsCoffee" target="_blank" rel="noopener noreferrer" aria-label="Chat with Dark Secrets Coffee on Messenger" title="Chat on Messenger">
+    <svg class="messenger-logo" viewBox="0 0 36 36" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M18 2C9.16 2 2 8.63 2 16.8c0 4.64 2.32 8.77 5.94 11.48V34l5.43-2.98c1.47.41 3.02.63 4.63.63 8.84 0 16-6.63 16-14.85S26.84 2 18 2Zm1.59 19.91-4.08-4.35-7.96 4.35 8.75-9.28 4.19 4.35 7.85-4.35-8.75 9.28Z"/></svg>
+  </a>
+</div>
+<script src="tracking-common.js?v=77"></script>
+<script src="messenger-ui.js?v=3" defer></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script src="supabase-config.js"></script>
+<script src="checkout-config.js"></script>
+<script src="order.js?v=payment-phase1-20261015"></script>
 </body>
 </html>

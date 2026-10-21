@@ -1,0 +1,33 @@
+DARK SECRETS COFFEE — PRODUCTION CANDIDATE (NOT YET DEPLOYED)
+
+Source: uploaded test repository ZIP from 2026-10-21.
+Target: darksecretscafe/dark-secrets-coffee-menu (GitHub Pages project path).
+
+Changes:
+- Removed test-only setup guides from release.
+- Renamed admin manifest TEST branding to production.
+- Updated admin service-worker cache namespace.
+- Used production-scoped localStorage keys for My Orders and checkout attempt.
+- Cleaned some TEST-only source comments; left behavior intact.
+- Preserved existing production README and all tested customer/admin scripts.
+
+BEFORE DEPLOYMENT — IMPORTANT:
+1. Review the server-side Edge Functions, especially register-push ownership, origin handling and sender configuration. The test ZIP contains only frontend code.
+2. Confirm live checkout and admin use the intended Supabase project and Cloudflare widget. Public keys in this ZIP are frontend configuration; never add private keys.
+3. Test in a staging preview under the production path before replacing the live site. A different GitHub Pages path means service-worker scopes and stored browser data differ.
+4. Confirm the production admin has permission to use all RPCs and Edge Functions, including push subscription registration.
+5. Confirm admin push notification delivery after PWA install on the production path; old TEST subscriptions do not automatically migrate.
+6. Confirm the current production README and payment QR images are appropriate.
+7. Existing test My Orders localStorage does NOT transfer to the production URL. Keep existing private tracking links if needed.
+8. Deploy to the ROOT of the live repository (index.html at repository root), not inside an extra folder.
+9. GitHub Pages project path is /dark-secrets-coffee-menu/; do not use /dark-secrets-test/.
+10. Rollback: restore the user's saved live ZIP if a release fails.
+
+The ZIP is a REVIEW CANDIDATE, not a guarantee of production safety. No live site or database was changed by packaging it.
+
+REVIEW UPDATE (2026-10-21):
+- Fixed admin-payment.js payment reference validation typo (.production -> .test).
+- Bumped admin-payment.js query version to v=2.
+- Static JavaScript syntax and local file reference checks passed.
+- register-push registration was user-tested, but server push delivery and production PWA registration are NOT verified.
+- Production release requires staged browser testing and explicit approval before live deployment.
