@@ -53,7 +53,9 @@
 
       const { data, error } = await db
         .from('products')
-        .select('id,product_code,name,price,category,is_active,oat_eligible')
+        .select(
+          'id,product_code,name,price,category,is_active,oat_eligible'
+        )
         .order('product_code');
 
       if (error) throw error;
@@ -105,7 +107,11 @@
         'ds-product-status' + (product.is_active ? '' : ' inactive')
       );
 
-      const actions = element('div', undefined, 'ds-product-actions');
+      const actions = element(
+        'div',
+        undefined,
+        'ds-product-actions'
+      );
 
       const edit = element('button', 'Edit', 'ghost');
       edit.type = 'button';
@@ -315,7 +321,7 @@
             .from('products')
             .insert({
               ...values,
-              is_active: false
+              is_active: true
             })
             .select('id,product_code');
         }
@@ -323,14 +329,17 @@
         if (result.error) throw result.error;
 
         if (!result.data?.length) {
-          throw new Error('No product was saved. Check permissions.');
+          throw new Error(
+            'No product was saved. Check permissions.'
+          );
         }
 
         closeForm();
         await loadProducts();
 
       } catch (error) {
-        feedback.textContent = 'Save failed: ' + error.message;
+        feedback.textContent =
+          'Save failed: ' + error.message;
 
       } finally {
         saving = false;
@@ -370,7 +379,9 @@
       if (error) throw error;
 
       if (!data?.length) {
-        throw new Error('Product was not updated. Refresh and retry.');
+        throw new Error(
+          'Product was not updated. Refresh and retry.'
+        );
       }
 
       await loadProducts();
