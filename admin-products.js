@@ -54,7 +54,7 @@
       const { data, error } = await db
         .from('products')
         .select(
-          'id,product_code,name,price,category,is_active,oat_eligible'
+          'id,product_code,name,price,category,is_active,oat_eligible,description,image_path'
         )
         .order('product_code');
 
@@ -95,6 +95,8 @@
         'ds-product-detail'
       );
 
+      const description = product.description ? element('span', product.description, 'ds-product-description') : null;
+
       const oatStatus = element(
         'span',
         product.oat_eligible ? 'Oat Milk Available' : 'No Oat Milk',
@@ -133,10 +135,20 @@
 
       actions.append(edit, toggle, remove);
 
+      if (product.image_path) {
+        const img = document.createElement('img');
+        img.className = 'ds-product-thumb';
+        img.alt = product.name;
+        img.loading = 'lazy';
+        img.src = db.storage.from('product-images').getPublicUrl(product.image_path).data.publicUrl;
+        card.append(img);
+      }
+
       card.append(
         name,
         code,
         detail,
+        ...(description ? [description] : []),
         oatStatus,
         status,
         actions
@@ -210,6 +222,33 @@
     category.value = product?.category || 'Coffee';
     categoryLabel.append(category);
 
+    const descriptionLabel = element('label', 'Description (optional, max 150 characters)');
+    const descriptionInput = document.createElement('textarea');
+    descriptionInput.maxLength = 150;
+    descriptionInput.rows = 3;
+    descriptionInput.value = product?.description || '';
+    descriptionLabel.append(descriptionInput);
+
+    const imageLabel = element('label', 'Product image (JPG, PNG, WebP; max 2 MB)');
+    const imageInput = document.createElement('input');
+    imageInput.type = 'file';
+    imageInput.accept = 'image/jpeg,image/png,image/webp';
+    const imagePreview = document.createElement('img');
+    imagePreview.className = 'ds-product-preview';
+    imagePreview.alt = 'Product image preview';
+    imagePreview.hidden = !product?.image_path;
+    if (product?.image_path) imagePreview.src = db.storage.from('product-images').getPublicUrl(product.image_path).data.publicUrl;
+    let previewUrl = null;
+    imageInput.onchange = () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const file = imageInput.files?.[0];
+      if (!file) return;
+      previewUrl = URL.createObjectURL(file);
+      imagePreview.src = previewUrl;
+      imagePreview.hidden = false;
+    };
+    imageLabel.append(imageInput, imagePreview);
+
     const oatLabel = element(
       'label',
       undefined,
@@ -257,6 +296,8 @@
       name.label,
       price.label,
       categoryLabel,
+      descriptionLabel,
+      imageLabel,
       oatLabel,
       actions,
       feedback
@@ -274,8 +315,15 @@
       const rawPrice = price.input.value.trim();
       const newPrice = Number(rawPrice);
       const newCategory = category.value;
+      const newDescription = descriptionInput.value.trim();
+      const imageFile = imageInput.files?.[0] || null;
+      if (imageFile && (!['image/jpeg', 'image/png', 'image/webp'].includes(imageFile.type) || imageFile.size > 2 * 1024 * 1024 || imageFile.size === 0)) {
+        feedback.textContent = 'Choose a JPG, PNG or WebP image under 2 MB.';
+        return;
+      }
 
       if (
+        newDescription.length > 150 ||
         !newName ||
         newName.length > 80 ||
         !/^\d+(\.\d{1,2})?$/.test(rawPrice) ||
@@ -310,6 +358,7 @@
           price: newPrice,
           category: newCategory,
           oat_eligible: oatCheckbox.checked,
+          description: newDescription || null,
           updated_at: new Date().toISOString()
         };
 
@@ -339,6 +388,21 @@
           );
         }
 
+        if (imageFile) {
+          const savedId = result.data[0].id;
+          const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[imageFile.type];
+          const path = `${savedId}/${crypto.randomUUID()}.${ext}`;
+          feedback.textContent = 'Uploading image…';
+          const upload = await db.storage.from('product-images').upload(path, imageFile, { contentType: imageFile.type, upsert: false });
+          if (upload.error) throw new Error('Product saved, but image upload failed: ' + upload.error.message);
+          const updated = await db.from('products').update({ image_path: path, updated_at: new Date().toISOString() }).eq('id', savedId).select('id');
+          if (updated.error || !updated.data?.length) {
+            await db.storage.from('product-images').remove([path]);
+            throw new Error('Product saved, but image link could not be saved: ' + (updated.error?.message || 'Permission denied'));
+          }
+        }
+
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
         closeForm();
         await loadProducts();
 
@@ -467,6 +531,12 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+
+    .ds-product-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; }
+    .ds-product-description { color: #705f51; font-size: 12px; flex: 1 1 100%; }
+    .ds-product-preview { width: 120px; height: 120px; object-fit: cover; border-radius: 9px; margin-top: 8px; }
+    .ds-product-preview[hidden] { display: none; }
+    .ds-product-form textarea { width: 100%; box-sizing: border-box; }
 
     .ds-product-card strong {
       flex: 1 1 160px;
