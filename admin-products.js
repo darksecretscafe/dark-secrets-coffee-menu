@@ -19,6 +19,7 @@
   let categories = [];
   let saving = false;
   const categoryOpenState = new Map();
+  let categoryManagerOpen = false;
 
   const money = value => '₱' + Number(value).toLocaleString('en-PH', {
     minimumFractionDigits: 2,
@@ -206,8 +207,21 @@
   function renderCategories() {
     if (!categoryHost) return;
     categoryHost.replaceChildren();
-    const title = element('h3', 'Manage Categories');
+    const panel = element('details', undefined, 'ds-category-manager-panel');
+    panel.open = categoryManagerOpen;
+    panel.addEventListener('toggle', () => { categoryManagerOpen = panel.open; });
+    const summary = element('summary', undefined, 'ds-category-manager-summary');
+    const summaryTitle = element('strong', 'Product Categories');
+    const badge = element('span', categories.length + (categories.length === 1 ? ' category' : ' categories'), 'ds-category-count');
+    const summaryHint = element('span', 'Manage categories', 'ds-category-manage-label');
+    summary.append(summaryTitle, badge, summaryHint);
+    const body = element('div', undefined, 'ds-category-manager-body');
     const hint = element('p', 'Drag categories to reorder. Rename or delete unused categories.');
+    const chips = element('div', undefined, 'ds-category-chips');
+    for (const entry of categories) {
+      const count = products.filter(p => p.category === entry.name).length;
+      chips.append(element('span', entry.name + ' (' + count + ')', 'ds-category-chip'));
+    }
     const list = element('div', undefined, 'ds-category-list');
     const notice = element('p', '', 'ds-product-feedback');
     notice.setAttribute('role', 'status');
@@ -228,7 +242,11 @@
         if (next.length > 50 || categories.some(c => c.id !== entry.id && c.name.toLowerCase() === next.toLowerCase())) {
           notice.textContent = 'Enter a unique category name (1–50 characters).'; return;
         }
-        await categoryMutation(() => db.from('categories').update({name:next}).eq('id',entry.id).select('id'), notice);
+        await categoryMutation(() => db.from('categories').update({name:next}).eq('id',entry.id).select('id'), notice, () => {
+          const previousName = entry.name;
+          entry.name = next;
+          products.forEach(product => { if (product.category === previousName) product.category = next; });
+        });
       };
       const remove = element('button', 'Delete', 'ghost');
       remove.type = 'button';
@@ -269,10 +287,12 @@
       }
       await categoryMutation(()=>db.from('categories').insert({name,sort_order:Math.max(0,...categories.map(c=>c.sort_order))+1}).select('id'),notice);
     };
-    categoryHost.append(title,hint,list,add,notice);
+    body.append(hint, list, add, notice);
+    panel.append(summary, chips, body);
+    categoryHost.append(panel);
   }
 
-  async function categoryMutation(operation, notice) {
+  async function categoryMutation(operation, notice, onSuccess) {
     if (saving) return;
     saving = true;
     notice.textContent = 'Saving category…';
@@ -281,9 +301,19 @@
       const result = await operation();
       if (result.error) throw result.error;
       if (!result.data?.length) throw new Error('Category change was not saved.');
+
+      // Show the confirmed rename immediately; no manual page refresh needed.
+      if (onSuccess) {
+        onSuccess();
+        renderCategories();
+        renderProducts();
+      }
+
       await loadProducts();
     } catch (error) {
-      notice.textContent = 'Category update failed: ' + error.message;
+      // The original notice may have been detached by a successful render.
+      const currentNotice = categoryHost?.querySelector('.ds-product-feedback') || notice;
+      currentNotice.textContent = 'Category refresh failed: ' + error.message;
     } finally { saving = false; }
   }
 
@@ -641,11 +671,26 @@
   const style = document.createElement('style');
 
   style.textContent = `
+    #categoryManagement { margin: 0 0 22px; }
+    .ds-category-manager-panel { border:1px solid #ddcfc1; border-radius:12px; background:#f9f3ea; overflow:hidden; }
+    .ds-category-manager-summary { display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:15px 17px; cursor:pointer; list-style:none; }
+    .ds-category-manager-summary::-webkit-details-marker { display:none; }
+    .ds-category-manager-summary:focus-visible { outline:3px solid #a8794b; outline-offset:-3px; }
+    .ds-category-manager-summary::before { content:'▸'; font-size:17px; color:#705f51; }
+    .ds-category-manager-panel[open] .ds-category-manager-summary::before { content:'▾'; }
+    .ds-category-manager-summary strong { font-size:15px; }
+    .ds-category-count { font-size:12px; color:#705f51; background:#eee4d8; border-radius:20px; padding:4px 9px; }
+    .ds-category-manage-label { margin-left:auto; font-size:12px; color:#705f51; }
+    .ds-category-chips { display:flex; flex-wrap:wrap; gap:7px; padding:0 17px 15px; }
+    .ds-category-manager-panel[open] .ds-category-chips { display:none; }
+    .ds-category-chip { padding:6px 10px; border-radius:7px; background:#eee4d8; font-size:12px; font-weight:600; }
+    .ds-category-manager-body { padding:0 17px 17px; border-top:1px solid #e4d7c9; }
+    .ds-category-manager-body > p:first-child { font-size:13px; color:#705f51; }
     .ds-category-list { display:grid; gap:8px; margin:12px 0; }
     .ds-category-line { display:flex; gap:12px; align-items:center; background:#f9f3ea; padding:10px; border:1px solid #ddcfc1; border-radius:9px; }
     .ds-category-line strong { flex:1; }
     .ds-category-handle { cursor:grab; font-size:20px; }
-    #categoryManagement { margin:0 0 25px; }
+
     #addProductButton {
       margin: 8px 0 18px;
     }
