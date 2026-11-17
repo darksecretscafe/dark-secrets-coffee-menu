@@ -77,12 +77,10 @@
     return item;
   }
 
-  function renderProducts(products) {
+  function renderProducts(products, categories) {
     menuProducts.replaceChildren();
 
-    const categories = ["Coffee", "Non-Coffee"];
-
-    for (const category of categories) {
+    for (const category of categories.map(c => c.name)) {
       const categoryProducts = products.filter(
         (product) => product.category === category
       );
@@ -93,10 +91,7 @@
       group.className = "group";
 
       const heading = document.createElement("h2");
-      heading.textContent =
-        category === "Coffee"
-          ? "☕ Coffee"
-          : "◒ Non-Coffee";
+      heading.textContent = category === "Coffee" ? "☕ Coffee" : category === "Non-Coffee" ? "◒ Non-Coffee" : category;
 
       group.appendChild(heading);
 
@@ -174,7 +169,17 @@
         throw new Error("Invalid products response.");
       }
 
-      renderProducts(products);
+      const categoriesUrl = new URL(`${supabaseUrl}/rest/v1/categories`);
+      categoriesUrl.searchParams.set("select","id,name,sort_order");
+      categoriesUrl.searchParams.set("order","sort_order.asc,id.asc");
+      const categoriesResponse = await fetch(categoriesUrl.toString(), {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, Accept:"application/json" },
+        cache:"no-store"
+      });
+      if (!categoriesResponse.ok) throw new Error("Category request failed: " + categoriesResponse.status);
+      const categories = await categoriesResponse.json();
+      if (!Array.isArray(categories)) throw new Error("Invalid categories response.");
+      renderProducts(products, categories);
     } catch (error) {
       console.error("Product loading error:", error);
       showError();
