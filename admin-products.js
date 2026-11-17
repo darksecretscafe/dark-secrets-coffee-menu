@@ -411,22 +411,6 @@
     try {
       await checkAdmin();
 
-      const { count, error: historyError } = await db
-        .from('order_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('product_id', product.id);
-
-      if (historyError) {
-        throw new Error('Could not verify order history. No product was deleted.');
-      }
-      if (count === null || count === undefined) {
-        throw new Error('Order history check unavailable. No product was deleted.');
-      }
-      if (count > 0) {
-        alert('Cannot delete: this product has order history and must remain for reporting.');
-        return;
-      }
-
       const { data, error } = await db
         .from('products')
         .delete()
