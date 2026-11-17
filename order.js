@@ -300,6 +300,10 @@ submitBusy=true;btn.disabled=true;status.textContent='Submitting your order…';
 })
   });
   const result=await response.json();
+  if (response.status === 409) {
+    clearOrderAttempt();
+    throw new Error('Menu prices changed. Please refresh the page and review your cart before ordering again.');
+  }
   if(!response.ok || !result.order_number || !/^[a-f0-9]{64}$/.test(result.tracking_token || ''))throw new Error(result.error||'Order confirmation incomplete. Retry the same order; do not create another.');
   status.textContent='';
 // Keep the retry credentials until the confirmation is displayed.
