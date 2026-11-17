@@ -2,9 +2,18 @@ const cart = new Map();
 const MAX_QTY = 15;
 const BOTTLE_FEE = 15;
 const OAT_FEE = 30;
-const OAT_ELIGIBLE = new Set(['Cafe Latte','Spanish Latte','White Chocolate Mocha','Caramel Macchiato','Matcha Latte','Hot Chocolate']);
+const OAT_ELIGIBLE = new Set(); // Populated exclusively from public.products
+function syncProductEligibility(products) {
+  OAT_ELIGIBLE.clear();
+  for (const product of products) if (product.oat_eligible) OAT_ELIGIBLE.add(product.name);
+  updateUI();
+}
+window.addEventListener('ds:products-loaded', event => syncProductEligibility(event.detail.products));
+// Product loading is asynchronous; initialize after all DOM references are ready.
+
 const peso = n => `₱${n}`;
-const items = [...document.querySelectorAll('.menu-item')];
+const menuProducts = document.getElementById('menuProducts');
+const menuItems = () => [...document.querySelectorAll('.menu-item')];
 const ctaCount = document.getElementById('ctaCount');
 const ctaSummary = document.getElementById('ctaSummary');
 const modal = document.getElementById('orderModal');
@@ -56,7 +65,7 @@ function openCustomizer(el){
   document.body.style.overflow='hidden';
 }
 function closeCustomizer(){customizer.classList.remove('open');customizer.setAttribute('aria-hidden','true');document.body.style.overflow=modal.classList.contains('open')?'hidden':'';}
-items.forEach(el=>el.querySelector('.add-btn').addEventListener('click',()=>openCustomizer(el)));
+menuProducts?.addEventListener('click', event => { const button=event.target.closest('.add-btn'); if(button && menuProducts.contains(button)) openCustomizer(button.closest('.menu-item')); });
 document.querySelectorAll('[data-custom-close]').forEach(el=>el.addEventListener('click',closeCustomizer));
 // Switching oat-milk selection displays the existing quantities for that exact variant.
 customOat.addEventListener('change',()=>{customError.textContent='';loadCustomizerQuantities()});
@@ -84,7 +93,7 @@ document.getElementById('customAdd').onclick=()=>{
 function updateUI(){
   const {count,total}=totals();ctaCount.textContent=count;
   ctaSummary.textContent=count?`${count} item${count===1?'':'s'} • ${peso(total)}`:'Select drinks above, then complete the checkout details.';
-  items.forEach(el=>{
+  menuItems().forEach(el=>{
     const n=Array.from(cart.values()).filter(i=>i.name===el.dataset.name).reduce((sum,i)=>sum+i.qty,0);
     el.querySelector('.add-btn').textContent=n?`+ ADD MORE (${n})`:'+ ADD';
   });
@@ -235,7 +244,13 @@ function clearOrderAttempt() {
   try { localStorage.removeItem(CHECKOUT_ATTEMPT_KEY); } catch {}
 }
 function orderItemsForBackend(){
- return Array.from(cart.values()).map(i=>({name:i.name,packaging:i.packaging,quantity:i.qty,oatMilk:i.oatMilk}));
+ return Array.from(cart.values()).map(i=>({
+  name:i.name,
+  packaging:i.packaging,
+  quantity:i.qty,
+  oatMilk:i.oatMilk,
+  expectedUnitPrice:unitPrice(i)
+ }));
 }
 let turnstileWidgetId=null;
 function getTurnstileToken(){
@@ -285,6 +300,10 @@ submitBusy=true;btn.disabled=true;status.textContent='Submitting your order…';
 })
   });
   const result=await response.json();
+  if (response.status === 409) {
+    clearOrderAttempt();
+    throw new Error('Menu prices changed. Please refresh the page and review your cart before ordering again.');
+  }
   if(!response.ok || !result.order_number || !/^[a-f0-9]{64}$/.test(result.tracking_token || ''))throw new Error(result.error||'Order confirmation incomplete. Retry the same order; do not create another.');
   status.textContent='';
 // Keep the retry credentials until the confirmation is displayed.
@@ -360,7 +379,7 @@ document.getElementById('messengerOrder').onclick=async()=>{
 };
 updateUI();
 
-// Checkout label follows TEST-only configuration.
+// Checkout label follows the production checkout configuration.
 if (window.DS_CHECKOUT?.enabled) {
   document.querySelector('.checkout-heading span').textContent = 'CHECKOUT';
   document.querySelector('.checkout-note').textContent = 'No payment is collected at checkout. Delivery fee and final payment instructions will be provided after your order is reviewed.';
