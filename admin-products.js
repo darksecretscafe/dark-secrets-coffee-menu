@@ -229,7 +229,7 @@
     descriptionInput.value = product?.description || '';
     descriptionLabel.append(descriptionInput);
 
-    const imageLabel = element('label', 'Product image (JPG, PNG, WebP; max 2 MB)');
+    const imageLabel = element('label', 'Product image (recommended: 800 × 800 px, square; JPG, PNG, WebP; max 2 MB)');
     const imageInput = document.createElement('input');
     imageInput.type = 'file';
     imageInput.accept = 'image/jpeg,image/png,image/webp';
@@ -536,7 +536,7 @@
     .ds-product-description { color: #705f51; font-size: 12px; flex: 1 1 100%; }
     .ds-product-preview { width: 120px; height: 120px; object-fit: cover; border-radius: 9px; margin-top: 8px; }
     .ds-product-preview[hidden] { display: none; }
-    .ds-product-form textarea { width: 100%; box-sizing: border-box; }
+    .ds-product-form textarea { width: 100%; height: 88px; min-height: 88px; max-height: 88px; box-sizing: border-box; resize: none; }
 
     .ds-product-card strong {
       flex: 1 1 160px;
