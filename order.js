@@ -3,7 +3,13 @@ const MAX_QTY = 15;
 const BOTTLE_FEE = 15;
 const OAT_FEE = 30;
 const OAT_ELIGIBLE = new Set(['Cafe Latte','Spanish Latte','White Chocolate Mocha','Caramel Macchiato','Matcha Latte','Hot Chocolate']);
-window.addEventListener('ds:products-loaded', event => { OAT_ELIGIBLE.clear(); for (const p of event.detail.products) if (p.oat_eligible) OAT_ELIGIBLE.add(p.name); updateUI(); });
+function syncProductEligibility(products) {
+  OAT_ELIGIBLE.clear();
+  for (const product of products) if (product.oat_eligible) OAT_ELIGIBLE.add(product.name);
+  updateUI();
+}
+window.addEventListener('ds:products-loaded', event => syncProductEligibility(event.detail.products));
+if (Array.isArray(window.DS_PRODUCTS)) syncProductEligibility(window.DS_PRODUCTS);
 const peso = n => `₱${n}`;
 const menuProducts = document.getElementById('menuProducts');
 const menuItems = () => [...document.querySelectorAll('.menu-item')];
