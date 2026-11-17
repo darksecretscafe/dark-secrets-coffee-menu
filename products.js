@@ -2,7 +2,7 @@
 /*
  * Dark Secrets Coffee
  * Dynamic Product Loader
- * Integration Preview only
+ * GitHub review branch — not deployed to LIVE
  */
 
 (() => {
