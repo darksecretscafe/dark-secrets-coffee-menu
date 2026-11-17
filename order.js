@@ -379,7 +379,7 @@ document.getElementById('messengerOrder').onclick=async()=>{
 };
 updateUI();
 
-// Checkout label follows TEST-only configuration.
+// Checkout label follows the production checkout configuration.
 if (window.DS_CHECKOUT?.enabled) {
   document.querySelector('.checkout-heading span').textContent = 'CHECKOUT';
   document.querySelector('.checkout-note').textContent = 'No payment is collected at checkout. Delivery fee and final payment instructions will be provided after your order is reviewed.';
