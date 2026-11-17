@@ -9,7 +9,8 @@ function syncProductEligibility(products) {
   updateUI();
 }
 window.addEventListener('ds:products-loaded', event => syncProductEligibility(event.detail.products));
-if (Array.isArray(window.DS_PRODUCTS)) syncProductEligibility(window.DS_PRODUCTS);
+// Product loading is asynchronous; initialize after all DOM references are ready.
+
 const peso = n => `₱${n}`;
 const menuProducts = document.getElementById('menuProducts');
 const menuItems = () => [...document.querySelectorAll('.menu-item')];
@@ -243,7 +244,13 @@ function clearOrderAttempt() {
   try { localStorage.removeItem(CHECKOUT_ATTEMPT_KEY); } catch {}
 }
 function orderItemsForBackend(){
- return Array.from(cart.values()).map(i=>({name:i.name,packaging:i.packaging,quantity:i.qty,oatMilk:i.oatMilk}));
+ return Array.from(cart.values()).map(i=>({
+  name:i.name,
+  packaging:i.packaging,
+  quantity:i.qty,
+  oatMilk:i.oatMilk,
+  expectedUnitPrice:unitPrice(i)
+ }));
 }
 let turnstileWidgetId=null;
 function getTurnstileToken(){
