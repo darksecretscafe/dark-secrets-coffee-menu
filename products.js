@@ -187,7 +187,10 @@
     .menu-item:has(.ds-menu-product-image) { grid-template-columns: 100px minmax(0,1fr) auto; }
     .ds-menu-product-image { width: 100px; height: 100px; flex: 0 0 100px; object-fit: cover; border-radius: 10px; }
     .ds-menu-product-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; text-align: left; }
-    .ds-menu-product-info > span { text-align: left; font-style: normal; }
+    .ds-menu-product-info > span { display: block; width: 100%; margin: 0; padding: 0; text-align: left !important; font-style: normal; align-self: flex-start; }
+    .menu-item .ds-menu-product-info { text-align: left !important; align-items: flex-start; }
+    .menu-item .ds-menu-product-info > * { max-width: 100%; }
+    .menu-item .ds-menu-product-info > b { margin: 0; text-align: left !important; }
     .ds-menu-product-info > b { text-align: left; }
     .ds-menu-product-details { font-size: 12px; text-align: left; min-width: 0; }
     .ds-menu-product-details > summary { display: inline-flex; align-items: center; gap: 5px; color: #79563c; font: 600 12px/1.4 Arial, sans-serif; cursor: pointer; list-style: none; }
