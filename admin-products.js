@@ -77,20 +77,6 @@
       return;
     }
 
-    const toolbar = element('div', undefined, 'ds-category-toolbar');
-    for (const [label, shouldOpen] of [['Expand All', true], ['Collapse All', false]]) {
-      const button = element('button', label, 'ghost');
-      button.type = 'button';
-      button.onclick = () => {
-        root.querySelectorAll('.ds-product-category-section').forEach(section => {
-          categoryOpenState.set(section.dataset.category, shouldOpen);
-          section.open = shouldOpen;
-        });
-      };
-      toolbar.append(button);
-    }
-    root.append(toolbar);
-
     const categories = ['Coffee', 'Non-Coffee', ...new Set(products.map(p => p.category).filter(c => c && c !== 'Coffee' && c !== 'Non-Coffee'))];
 
     for (const category of categories) {
@@ -584,8 +570,6 @@
       flex-wrap: wrap;
     }
 
-    .ds-category-toolbar { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
-    .ds-category-toolbar button { padding: 7px 12px; }
     .ds-product-category-section { margin: 18px 0 26px; }
     .ds-product-category-heading { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; padding: 11px 14px; border-radius: 10px; background: #321e12; color: #fff; font-size: 17px; font-weight: 700; cursor: pointer; list-style: none; }
     .ds-product-category-heading::-webkit-details-marker { display: none; }
