@@ -128,11 +128,8 @@
 
       const remove = element('button', 'Delete', 'ghost ds-product-delete');
       remove.type = 'button';
-      remove.disabled = !product.is_active;
-      remove.title = product.is_active
-        ? 'Hide this product from the customer menu without deleting its history'
-        : 'Already removed from the customer menu';
-      remove.onclick = () => softDeleteProduct(product, remove);
+      remove.title = 'Permanently delete only if this product has no order history';
+      remove.onclick = () => deleteUnusedProduct(product, remove);
 
       actions.append(edit, toggle, remove);
 
@@ -403,10 +400,10 @@
     }
   }
 
-  async function softDeleteProduct(product, button) {
-    if (saving || !product.is_active) return;
+  async function deleteUnusedProduct(product, button) {
+    if (saving) return;
 
-    if (!confirm(`Delete "${product.name}" from the customer menu?\n\nThis is a soft delete: the product and existing order history stay in the database. You can restore it using Mark Available.`)) return;
+    if (!confirm(`Permanently delete "${product.name}"?\n\nThis cannot be undone. Products with order history cannot be deleted.`)) return;
 
     saving = true;
     button.disabled = true;
@@ -414,19 +411,36 @@
     try {
       await checkAdmin();
 
+      const { count, error: historyError } = await db
+        .from('order_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('product_id', product.id);
+
+      if (historyError) {
+        throw new Error('Could not verify order history. No product was deleted.');
+      }
+      if (count === null || count === undefined) {
+        throw new Error('Order history check unavailable. No product was deleted.');
+      }
+      if (count > 0) {
+        alert('Cannot delete: this product has order history and must remain for reporting.');
+        return;
+      }
+
       const { data, error } = await db
         .from('products')
-        .update({
-          is_active: false,
-          updated_at: new Date().toISOString()
-        })
+        .delete()
         .eq('id', product.id)
-        .eq('is_active', true)
         .select('id');
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23503') {
+          throw new Error('Cannot delete: this product has order history.');
+        }
+        throw error;
+      }
       if (!data?.length) {
-        throw new Error('Product was not updated. Refresh and retry.');
+        throw new Error('Product was not deleted. Check admin permissions.');
       }
 
       closeForm();
@@ -535,11 +549,6 @@
     .ds-product-delete {
       color: #9c332a;
       border-color: #c69c93;
-    }
-
-    .ds-product-delete:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
     }
 
     .ds-product-form {
