@@ -126,7 +126,15 @@
       toggle.type = 'button';
       toggle.onclick = () => changeAvailability(product, toggle);
 
-      actions.append(edit, toggle);
+      const remove = element('button', 'Delete', 'ghost ds-product-delete');
+      remove.type = 'button';
+      remove.disabled = !product.is_active;
+      remove.title = product.is_active
+        ? 'Hide this product from the customer menu without deleting its history'
+        : 'Already removed from the customer menu';
+      remove.onclick = () => softDeleteProduct(product, remove);
+
+      actions.append(edit, toggle, remove);
 
       card.append(
         name,
@@ -395,6 +403,42 @@
     }
   }
 
+  async function softDeleteProduct(product, button) {
+    if (saving || !product.is_active) return;
+
+    if (!confirm(`Delete "${product.name}" from the customer menu?\n\nThis is a soft delete: the product and existing order history stay in the database. You can restore it using Mark Available.`)) return;
+
+    saving = true;
+    button.disabled = true;
+
+    try {
+      await checkAdmin();
+
+      const { data, error } = await db
+        .from('products')
+        .update({
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', product.id)
+        .eq('is_active', true)
+        .select('id');
+
+      if (error) throw error;
+      if (!data?.length) {
+        throw new Error('Product was not updated. Refresh and retry.');
+      }
+
+      closeForm();
+      await loadProducts();
+    } catch (error) {
+      alert('Delete failed: ' + error.message);
+    } finally {
+      saving = false;
+      button.disabled = false;
+    }
+  }
+
   addButton.onclick = () => {
     if (formContainer.hidden) {
       showForm();
@@ -486,6 +530,16 @@
     .ds-product-actions button {
       padding: 7px 11px;
       font-size: 12px;
+    }
+
+    .ds-product-delete {
+      color: #9c332a;
+      border-color: #c69c93;
+    }
+
+    .ds-product-delete:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
     }
 
     .ds-product-form {
