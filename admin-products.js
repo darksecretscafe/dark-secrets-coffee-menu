@@ -16,6 +16,7 @@
   }
 
   let products = [];
+  let categories = [];
   let saving = false;
   const categoryOpenState = new Map();
 
@@ -62,6 +63,10 @@
       if (error) throw error;
 
       products = data || [];
+      const categoryResult = await db.from('categories').select('id,name,sort_order').order('sort_order').order('id');
+      if (categoryResult.error) throw categoryResult.error;
+      categories = categoryResult.data || [];
+      renderCategories();
       renderProducts();
 
     } catch (error) {
@@ -77,9 +82,8 @@
       return;
     }
 
-    const categories = ['Coffee', 'Non-Coffee', ...new Set(products.map(p => p.category).filter(c => c && c !== 'Coffee' && c !== 'Non-Coffee'))];
-
-    for (const category of categories) {
+    for (const entry of categories) {
+      const category = entry.name;
       const groupedProducts = products.filter(p => p.category === category);
       if (!groupedProducts.length) continue;
 
@@ -198,6 +202,91 @@
     }
   }
 
+  const categoryHost = document.getElementById('categoryManagement');
+  function renderCategories() {
+    if (!categoryHost) return;
+    categoryHost.replaceChildren();
+    const title = element('h3', 'Manage Categories');
+    const hint = element('p', 'Drag categories to reorder. Rename or delete unused categories.');
+    const list = element('div', undefined, 'ds-category-list');
+    const notice = element('p', '', 'ds-product-feedback');
+    notice.setAttribute('role', 'status');
+    let dragging = null;
+    for (const entry of categories) {
+      const count = products.filter(p => p.category === entry.name).length;
+      const line = element('div', undefined, 'ds-category-line');
+      line.draggable = true;
+      line.dataset.id = String(entry.id);
+      const handle = element('span', '☰', 'ds-category-handle');
+      handle.title = 'Drag to reorder';
+      const name = element('strong', entry.name + ' (' + count + ')');
+      const rename = element('button', 'Rename', 'ghost');
+      rename.type = 'button';
+      rename.onclick = async () => {
+        const next = prompt('New category name:', entry.name)?.trim();
+        if (!next || next === entry.name) return;
+        if (next.length > 50 || categories.some(c => c.id !== entry.id && c.name.toLowerCase() === next.toLowerCase())) {
+          notice.textContent = 'Enter a unique category name (1–50 characters).'; return;
+        }
+        await categoryMutation(() => db.from('categories').update({name:next}).eq('id',entry.id).select('id'), notice);
+      };
+      const remove = element('button', 'Delete', 'ghost');
+      remove.type = 'button';
+      remove.disabled = count > 0;
+      remove.title = count ? 'Move or delete products first' : 'Delete empty category';
+      remove.onclick = async () => {
+        if (!confirm('Delete empty category "' + entry.name + '"?')) return;
+        await categoryMutation(() => db.from('categories').delete().eq('id',entry.id).select('id'),notice);
+      };
+      line.append(handle,name,rename,remove);
+      line.addEventListener('dragstart', e => { dragging = entry.id; e.dataTransfer.effectAllowed = 'move'; });
+      line.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+      line.addEventListener('drop', async e => {
+        e.preventDefault();
+        if (dragging === null || dragging === entry.id) return;
+        const ordered = categories.map(c => c.id);
+        ordered.splice(ordered.indexOf(dragging),1);
+        ordered.splice(ordered.indexOf(entry.id),0,dragging);
+        dragging = null;
+        await categoryMutation(async () => {
+          for (let i=0;i<ordered.length;i++) {
+            const {error} = await db.from('categories').update({sort_order:i+1}).eq('id',ordered[i]);
+            if (error) return {error};
+          }
+          return {data:[{id:1}]};
+        },notice);
+      });
+      line.addEventListener('dragend',()=>{dragging=null;});
+      list.append(line);
+    }
+    const add = element('button', '+ Add Category');
+    add.type = 'button';
+    add.onclick = async () => {
+      const name = prompt('New category name:')?.trim();
+      if (!name) return;
+      if (name.length > 50 || categories.some(c=>c.name.toLowerCase()===name.toLowerCase())) {
+        notice.textContent = 'Enter a unique category name (1–50 characters).';return;
+      }
+      await categoryMutation(()=>db.from('categories').insert({name,sort_order:Math.max(0,...categories.map(c=>c.sort_order))+1}).select('id'),notice);
+    };
+    categoryHost.append(title,hint,list,add,notice);
+  }
+
+  async function categoryMutation(operation, notice) {
+    if (saving) return;
+    saving = true;
+    notice.textContent = 'Saving category…';
+    try {
+      await checkAdmin();
+      const result = await operation();
+      if (result.error) throw result.error;
+      if (!result.data?.length) throw new Error('Category change was not saved.');
+      await loadProducts();
+    } catch (error) {
+      notice.textContent = 'Category update failed: ' + error.message;
+    } finally { saving = false; }
+  }
+
   function closeForm() {
     formContainer.replaceChildren();
     formContainer.hidden = true;
@@ -250,7 +339,7 @@
     const categoryLabel = element('label', 'Category');
     const category = document.createElement('select');
 
-    for (const value of ['Coffee', 'Non-Coffee']) {
+    for (const value of categories.map(c => c.name)) {
       const option = document.createElement('option');
       option.value = value;
       option.textContent = value;
@@ -353,6 +442,7 @@
       const rawPrice = price.input.value.trim();
       const newPrice = Number(rawPrice);
       const newCategory = category.value;
+      const selectedCategory = categories.find(c => c.name === newCategory);
       const newDescription = descriptionInput.value.trim();
       const imageFile = imageInput.files?.[0] || null;
       if (imageFile && (!['image/jpeg', 'image/png', 'image/webp'].includes(imageFile.type) || imageFile.size > 2 * 1024 * 1024 || imageFile.size === 0)) {
@@ -368,7 +458,7 @@
         !Number.isFinite(newPrice) ||
         newPrice <= 0 ||
         newPrice > 99999.99 ||
-        !['Coffee', 'Non-Coffee'].includes(newCategory)
+        !selectedCategory
       ) {
         feedback.textContent = 'Enter valid product details.';
         return;
@@ -395,6 +485,7 @@
           name: newName,
           price: newPrice,
           category: newCategory,
+          category_id: selectedCategory.id,
           oat_eligible: oatCheckbox.checked,
           description: newDescription || null,
           updated_at: new Date().toISOString()
@@ -550,6 +641,11 @@
   const style = document.createElement('style');
 
   style.textContent = `
+    .ds-category-list { display:grid; gap:8px; margin:12px 0; }
+    .ds-category-line { display:flex; gap:12px; align-items:center; background:#f9f3ea; padding:10px; border:1px solid #ddcfc1; border-radius:9px; }
+    .ds-category-line strong { flex:1; }
+    .ds-category-handle { cursor:grab; font-size:20px; }
+    #categoryManagement { margin:0 0 25px; }
     #addProductButton {
       margin: 8px 0 18px;
     }
