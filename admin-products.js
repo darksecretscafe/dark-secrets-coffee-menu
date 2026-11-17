@@ -76,9 +76,17 @@
       return;
     }
 
-    const list = element('div', undefined, 'ds-products-grid');
+    const categories = ['Coffee', 'Non-Coffee', ...new Set(products.map(p => p.category).filter(c => c && c !== 'Coffee' && c !== 'Non-Coffee'))];
 
-    for (const product of products) {
+    for (const category of categories) {
+      const groupedProducts = products.filter(p => p.category === category);
+      if (!groupedProducts.length) continue;
+
+      const section = element('section', undefined, 'ds-product-category-section');
+      const heading = element('h3', `${category} (${groupedProducts.length})`, 'ds-product-category-heading');
+      const list = element('div', undefined, 'ds-products-grid');
+
+      for (const product of groupedProducts) {
       const card = element('article', undefined, 'ds-product-card');
 
       const name = element('strong', product.name);
@@ -155,9 +163,11 @@
       );
 
       list.append(card);
-    }
+      }
 
-    root.append(list);
+      section.append(heading, list);
+      root.append(section);
+    }
   }
 
   function closeForm() {
@@ -531,6 +541,9 @@
       gap: 10px;
       flex-wrap: wrap;
     }
+
+    .ds-product-category-section { margin: 18px 0 26px; }
+    .ds-product-category-heading { margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid #d3c3b4; font-size: 18px; color: #2b1c14; }
 
     .ds-product-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 9px; }
     .ds-product-description { color: #705f51; font-size: 12px; flex: 1 1 100%; }
