@@ -59,13 +59,19 @@
     const info = document.createElement('div');
     info.className = 'ds-menu-product-info';
     info.append(name);
-    if (product.description) {
-      const desc = document.createElement('small');
+    info.append(price);
+    if (product.description && product.description.trim()) {
+      const details = document.createElement('details');
+      details.className = 'ds-menu-product-details';
+      const summary = document.createElement('summary');
+      summary.textContent = 'Description';
+      summary.setAttribute('aria-label', 'Toggle description for ' + product.name);
+      const desc = document.createElement('p');
       desc.className = 'ds-menu-product-description';
       desc.textContent = product.description;
-      info.append(desc);
+      details.append(summary, desc);
+      info.append(details);
     }
-    info.append(price);
     item.append(info, button);
 
     return item;
@@ -180,8 +186,15 @@
     .menu-item:has(.ds-menu-product-info) { display: grid !important; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; }
     .menu-item:has(.ds-menu-product-image) { grid-template-columns: 100px minmax(0,1fr) auto; }
     .ds-menu-product-image { width: 100px; height: 100px; flex: 0 0 100px; object-fit: cover; border-radius: 10px; }
-    .ds-menu-product-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-    .ds-menu-product-description { color: #786c62; line-height: 1.4; font-size: 12px; }
+    .ds-menu-product-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; text-align: left; }
+    .ds-menu-product-info > span { text-align: left; font-style: normal; }
+    .ds-menu-product-info > b { text-align: left; }
+    .ds-menu-product-details { font-size: 12px; text-align: left; min-width: 0; }
+    .ds-menu-product-details > summary { display: inline-flex; align-items: center; gap: 5px; color: #79563c; font: 600 12px/1.4 Arial, sans-serif; cursor: pointer; list-style: none; }
+    .ds-menu-product-details > summary::-webkit-details-marker { display: none; }
+    .ds-menu-product-details > summary::after { content: '⌄'; font-size: 16px; line-height: 12px; transition: transform .15s ease; }
+    .ds-menu-product-details[open] > summary::after { transform: rotate(180deg); }
+    .ds-menu-product-description { display: block; margin: 7px 0 0; color: #786c62; font: normal 12px/1.45 Arial, sans-serif; text-align: left; }
     @media (min-width: 768px) { .ds-menu-product-image { width: 120px; height: 120px; } .menu-item:has(.ds-menu-product-image) { grid-template-columns: 120px minmax(0,1fr) auto; } }
   `;
   document.head.append(style);
