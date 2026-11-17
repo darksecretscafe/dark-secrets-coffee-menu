@@ -177,11 +177,12 @@
 
   const style = document.createElement('style');
   style.textContent = `
-    .menu-item:has(.ds-menu-product-info) { display: flex; align-items: center; gap: 12px; }
+    .menu-item:has(.ds-menu-product-info) { display: grid !important; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; }
+    .menu-item:has(.ds-menu-product-image) { grid-template-columns: 100px minmax(0,1fr) auto; }
     .ds-menu-product-image { width: 100px; height: 100px; flex: 0 0 100px; object-fit: cover; border-radius: 10px; }
     .ds-menu-product-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
     .ds-menu-product-description { color: #786c62; line-height: 1.4; font-size: 12px; }
-    @media (min-width: 768px) { .ds-menu-product-image { width: 120px; height: 120px; flex-basis: 120px; } }
+    @media (min-width: 768px) { .ds-menu-product-image { width: 120px; height: 120px; } .menu-item:has(.ds-menu-product-image) { grid-template-columns: 120px minmax(0,1fr) auto; } }
   `;
   document.head.append(style);
   loadProducts();
