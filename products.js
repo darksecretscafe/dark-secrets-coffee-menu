@@ -48,7 +48,25 @@
     button.type = "button";
     button.textContent = "+ ADD";
 
-    item.append(name, price, button);
+    if (product.image_path) {
+      const image = document.createElement('img');
+      image.className = 'ds-menu-product-image';
+      image.alt = product.name;
+      image.loading = 'lazy';
+      image.src = `${supabaseUrl}/storage/v1/object/public/product-images/${product.image_path.split('/').map(encodeURIComponent).join('/')}`;
+      item.append(image);
+    }
+    const info = document.createElement('div');
+    info.className = 'ds-menu-product-info';
+    info.append(name);
+    if (product.description) {
+      const desc = document.createElement('small');
+      desc.className = 'ds-menu-product-description';
+      desc.textContent = product.description;
+      info.append(desc);
+    }
+    info.append(price);
+    item.append(info, button);
 
     return item;
   }
@@ -122,7 +140,7 @@
 
       url.searchParams.set(
         "select",
-        "id,product_code,name,price,category,is_active,oat_eligible"
+        "id,product_code,name,price,category,is_active,oat_eligible,description,image_path"
       );
 
       url.searchParams.set("is_active", "eq.true");
@@ -157,5 +175,15 @@
     }
   }
 
+  const style = document.createElement('style');
+  style.textContent = `
+    .menu-item:has(.ds-menu-product-info) { display: grid !important; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; }
+    .menu-item:has(.ds-menu-product-image) { grid-template-columns: 100px minmax(0,1fr) auto; }
+    .ds-menu-product-image { width: 100px; height: 100px; flex: 0 0 100px; object-fit: cover; border-radius: 10px; }
+    .ds-menu-product-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+    .ds-menu-product-description { color: #786c62; line-height: 1.4; font-size: 12px; }
+    @media (min-width: 768px) { .ds-menu-product-image { width: 120px; height: 120px; } .menu-item:has(.ds-menu-product-image) { grid-template-columns: 120px minmax(0,1fr) auto; } }
+  `;
+  document.head.append(style);
   loadProducts();
 })();
