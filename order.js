@@ -2,7 +2,7 @@ const cart = new Map();
 const MAX_QTY = 15;
 const BOTTLE_FEE = 15;
 const OAT_FEE = 30;
-const OAT_ELIGIBLE = new Set(['Cafe Latte','Spanish Latte','White Chocolate Mocha','Caramel Macchiato','Matcha Latte','Hot Chocolate']);
+const OAT_ELIGIBLE = new Set(); // Populated exclusively from public.products
 function syncProductEligibility(products) {
   OAT_ELIGIBLE.clear();
   for (const product of products) if (product.oat_eligible) OAT_ELIGIBLE.add(product.name);
