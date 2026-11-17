@@ -173,14 +173,14 @@
         card.append(img);
       }
 
-      card.append(
-        identity,
-        detail,
-        ...(description ? [description] : []),
-        oatStatus,
-        status,
-        actions
-      );
+      const info = element('div', undefined, 'ds-product-info');
+      info.append(identity);
+      if (description) info.append(description);
+
+      const meta = element('div', undefined, 'ds-product-meta');
+      meta.append(detail, oatStatus, status);
+
+      card.append(info, meta, actions);
 
       list.append(card);
       }
@@ -570,7 +570,7 @@
     .ds-product-category-heading::after { content: '⌄'; font-size: 23px; line-height: 1; transition: transform .15s ease; }
     .ds-product-category-section[open] > .ds-product-category-heading::after { transform: rotate(180deg); }
     .ds-product-category-heading:focus-visible { outline: 3px solid #a8794b; outline-offset: 2px; }
-    .ds-product-identity { display: flex; flex: 1 1 160px; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
+    .ds-product-identity { display: flex; flex: none; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; }
     .ds-product-identity strong { flex: none; }
     .ds-product-identity .ds-product-code { align-self: flex-start; }
 
@@ -580,8 +580,20 @@
     .ds-product-preview[hidden] { display: none; }
     .ds-product-form textarea { width: 100%; height: 88px; min-height: 88px; max-height: 88px; box-sizing: border-box; resize: none; }
 
-    .ds-product-card strong {
-      flex: 1 1 160px;
+    .ds-product-card { display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(130px, 0.45fr) auto; align-items: center; gap: 12px; }
+    .ds-product-thumb { grid-column: 1; grid-row: 1; }
+    .ds-product-info { grid-column: 2; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+    .ds-product-meta { grid-column: 3; display: flex; flex-direction: column; align-items: flex-start; gap: 9px; }
+    .ds-product-actions { grid-column: 4; }
+    .ds-product-identity { flex: none; }
+    .ds-product-card strong { flex: none; }
+    .ds-product-description { flex: none; overflow-wrap: anywhere; line-height: 1.45; }
+    @media (max-width: 800px) {
+      .ds-product-card { grid-template-columns: 56px minmax(0, 1fr); gap: 10px; }
+      .ds-product-thumb { width: 56px; height: 56px; grid-column: 1; grid-row: 1; }
+      .ds-product-info { grid-column: 2; grid-row: 1; }
+      .ds-product-meta { grid-column: 1 / -1; grid-row: 2; flex-direction: row; flex-wrap: wrap; align-items: center; }
+      .ds-product-actions { grid-column: 1 / -1; grid-row: 3; flex-wrap: wrap; }
     }
 
     .ds-product-code {
