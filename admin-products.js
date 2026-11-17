@@ -228,7 +228,11 @@
         if (next.length > 50 || categories.some(c => c.id !== entry.id && c.name.toLowerCase() === next.toLowerCase())) {
           notice.textContent = 'Enter a unique category name (1–50 characters).'; return;
         }
-        await categoryMutation(() => db.from('categories').update({name:next}).eq('id',entry.id).select('id'), notice);
+        await categoryMutation(() => db.from('categories').update({name:next}).eq('id',entry.id).select('id'), notice, () => {
+          const previousName = entry.name;
+          entry.name = next;
+          products.forEach(product => { if (product.category === previousName) product.category = next; });
+        });
       };
       const remove = element('button', 'Delete', 'ghost');
       remove.type = 'button';
@@ -272,7 +276,7 @@
     categoryHost.append(title,hint,list,add,notice);
   }
 
-  async function categoryMutation(operation, notice) {
+  async function categoryMutation(operation, notice, onSuccess) {
     if (saving) return;
     saving = true;
     notice.textContent = 'Saving category…';
@@ -281,9 +285,19 @@
       const result = await operation();
       if (result.error) throw result.error;
       if (!result.data?.length) throw new Error('Category change was not saved.');
+
+      // Show the confirmed rename immediately; no manual page refresh needed.
+      if (onSuccess) {
+        onSuccess();
+        renderCategories();
+        renderProducts();
+      }
+
       await loadProducts();
     } catch (error) {
-      notice.textContent = 'Category update failed: ' + error.message;
+      // The original notice may have been detached by a successful render.
+      const currentNotice = categoryHost?.querySelector('.ds-product-feedback') || notice;
+      currentNotice.textContent = 'Category refresh failed: ' + error.message;
     } finally { saving = false; }
   }
 
