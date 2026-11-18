@@ -18,14 +18,23 @@
 4. `inventory_recipe_versions` and variant override rules: immutable approved recipe snapshots for accepted orders; oat replaces regular milk and bottle replaces applicable cup/lid/straw. Exact modifier payload values must be verified from checkout and persisted order items before implementation.
 5. A reconciliation/audit view (or admin query) that compares accepted reservations, completed consumption, stock movement ledger and order status history.
 
+## Cancellation permission and preparation lock (owner clarification)
+
+- Customer (CS) may cancel **only before branch acceptance**, consistent with existing checkout rules. Once accepted, customer cancellation is unavailable even if kitchen preparation has not started.
+- Once preparation has started, **customer cancellation must remain blocked**. Do not treat an inventory reservation release as permission to cancel an order.
+- Branch/admin cancellation or refund is a **separate, privileged workflow** requiring explicit business rules. The presence of a backend cancellation endpoint does not imply the customer can call it.
+- Enforce these restrictions **server-side** using the existing order-status and preparation guards; hiding a button is not sufficient. Inspect actual status values and guard logic before implementing.
+- If an authorized exception occurs after preparation starts, do **not** automatically return consumed or prepared ingredients to stock. Determine wastage/reversal policy separately.
+- Inventory event processing must observe the *authorized committed status transition*, not independently change order status or bypass cancellation guards.
+
 ## State machine
 
 | From | To | Inventory effect | Repeat event |
 |---|---|---|---|
 | Pending | Accepted | Snapshot recipe and modifiers; reserve required base units | No duplicate reservation |
-| Pending | Cancelled | No reservation or deduction | No-op |
+| Pending | Cancelled | Customer cancellation permitted before branch acceptance; no reservation or deduction | No-op |
 | Accepted | Completed | Atomically append negative ledger movements and cost snapshots, mark reservations consumed | No duplicate deduction |
-| Accepted | Cancelled | Release active reservations, no physical deduction | No-op |
+| Accepted | Cancelled | **Privileged exception only** if allowed by existing status/preparation guards; release reservation only if ingredients not consumed | No-op |
 | Completed | Completed | No-op | No-op |
 | Cancelled | Cancelled | No-op | No-op |
 | Completed | Cancelled/refunded | **Needs explicit policy**: refund does not necessarily restore consumed ingredients | Do not automatically restock |
@@ -61,6 +70,7 @@ Other transitions must follow the existing order status guards; do not invent ne
 ## Outstanding decisions
 
 - Completed order subsequently cancelled/refunded: whether wastage, return, or no stock reversal applies (default **no automatic restock** pending owner approval).
+- Whether any privileged cancellation after acceptance is allowed by existing guards; never expose this as a customer capability.
 - Whether existing order status updates can happen offline or be reordered, and which event ID is stable.
 - Exact product modifier payloads and packaging components.
 - Whether recipe versions can change while an order is accepted.
