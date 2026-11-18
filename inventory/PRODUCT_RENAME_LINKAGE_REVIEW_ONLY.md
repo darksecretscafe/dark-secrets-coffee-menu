@@ -39,3 +39,8 @@ This document defines behavior for Phase 2. Persistent storage, product join, au
 ## Remaining blocking verification
 - Check product editor code for UPDATE-in-place vs DELETE/INSERT and triggers affecting ID.
 - Confirm RLS enabled and existing FK/deletion behavior before approving a production migration.
+
+## Verified trigger and menu editor (2026-11-18)
+- Owner supplied definition of `public.sync_product_category()`: the BEFORE INSERT OR UPDATE trigger assigns `NEW.category` and/or `NEW.category_id`; it does not assign `NEW.id`.
+- Reviewed default-branch `admin-products.js`: existing-product edit calls `db.from('products').update(values).eq('id', product.id).select('id,product_code')`. New products use `insert` in a separate branch. Thus normal menu-editor rename updates in place and preserves UUID.
+- This establishes design compatibility, **not** implementation of persistent recipe synchronization. RLS enablement is still awaiting owner-provided result.
