@@ -67,6 +67,7 @@ create table if not exists public.inventory_settings (
 insert into public.inventory_settings(singleton, automatic_inventory_enabled)
 values (true,false) on conflict (singleton) do nothing;
 
+-- RLS is an additional gate; explicit privileges below also restrict direct ledger writes.
 -- Deny all access by default except authenticated admins via existing is_admin().
 -- Service roles retain their normal elevated access.
 alter table public.inventory_items enable row level security;
@@ -78,9 +79,13 @@ alter table public.inventory_settings enable row level security;
 create policy inventory_items_admin on public.inventory_items
   for all to authenticated using ((select public.is_admin()))
   with check ((select public.is_admin()));
-create policy inventory_movements_admin on public.inventory_stock_movements
-  for all to authenticated using ((select public.is_admin()))
-  with check ((select public.is_admin()));
+-- Ledger is read-only to browser clients, including admins. Future server-side
+-- transactional RPCs must append entries with validation and an audit trail.
+-- No direct INSERT, UPDATE, or DELETE from the client.
+revoke all on public.inventory_stock_movements from public, anon, authenticated;
+grant select on public.inventory_stock_movements to authenticated;
+create policy inventory_movements_admin_read on public.inventory_stock_movements
+  for select to authenticated using ((select public.is_admin()));
 create policy inventory_recipes_admin on public.inventory_recipes
   for all to authenticated using ((select public.is_admin()))
   with check ((select public.is_admin()));
@@ -90,6 +95,8 @@ create policy inventory_recipe_lines_admin on public.inventory_recipe_lines
 create policy inventory_settings_admin on public.inventory_settings
   for select to authenticated using ((select public.is_admin()));
 
+-- The inventory settings table is read-only to browser clients.
+-- Other inventory tables still require privilege/RLS verification before deployment.
 -- No client-side update policy for activation. Activation must be implemented
 -- later through a verified, server-side admin-only function with validation.
 commit;
