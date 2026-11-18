@@ -112,3 +112,9 @@ Other transitions must follow the existing order status guards; do not invent ne
 - `assign_order_item_product_id` uses the portion before ` · ` to match the base product name to `products.id`, preserving product linkage for oat variants.
 - Checkout accepts only `Regular Cup` or `Take Away Bottle` packaging, despite `order_items` CHECK allowing `Add-on`. No `Add-on` rows were found in the user-run query; **do not** treat `Add-on` as oat milk in the inventory mapping.
 - Inventory recipe logic should recognize oat substitution by exact suffix and use oat milk **instead of** dairy milk; bottle packaging replaces regular cup components. Verify exact live product names and recipe quantities before any automation. Never infer modifier from unit price alone.
+
+## Verified persisted oat variant examples (read-only aggregate, 2026-11-18)
+
+- Six grouped order-item records with `product_name` suffix ` · Sub Oat Milk`, totaling **7 units**: Caramel Macchiato / Take Away Bottle 2; Cafe Latte / Regular Cup 1; Hot Chocolate / Regular Cup 1; Matcha Latte / Regular Cup 1; Matcha Latte / Take Away Bottle 1; Spanish Latte / Take Away Bottle 1.
+- Aggregated quantities: **3 Regular Cup, 4 Take Away Bottle**. This validates that suffix-based oat detection and independent packaging selection are represented in persisted orders. It does not establish recipe ingredient quantities, product costs, or that the inventory integration is active.
+- Next design step: collect actual ingredient and packaging recipe quantities per drink and supplier unit costs; leave any missing values unfilled and keep LIVE auto-inventory OFF.
