@@ -4,7 +4,22 @@
 -- Uses existing public.is_admin() RPC for admin-only access.
 begin;
 
-create table if not exists public.inventory_items (
+-- Fail closed if an inventory object already exists. Do not silently adopt
+-- pre-existing tables with unknown columns, grants, policies or data.
+do $
+declare v_name text;
+begin
+  foreach v_name in array array[
+    'inventory_items','inventory_stock_movements','inventory_recipes',
+    'inventory_recipe_lines','inventory_settings'
+  ] loop
+    if to_regclass('public.' || v_name) is not null then
+      raise exception 'Inventory table already exists: %. Stop and review.', v_name;
+    end if;
+  end loop;
+end $;
+
+create table public.inventory_items (
   id uuid primary key default gen_random_uuid(),
   item_code text not null unique,
   name text not null,
@@ -26,7 +41,7 @@ create table if not exists public.inventory_items (
   )
 );
 
-create table if not exists public.inventory_stock_movements (
+create table public.inventory_stock_movements (
   id uuid primary key default gen_random_uuid(),
   item_id uuid not null references public.inventory_items(id) on delete restrict,
   movement_type text not null check (movement_type in ('opening','receive','adjustment','wastage','order_deduction','reversal')),
@@ -41,17 +56,17 @@ create table if not exists public.inventory_stock_movements (
   created_at timestamptz not null default now(),
   created_by uuid default auth.uid()
 );
-create index if not exists inventory_movements_item_created_idx
+create index inventory_movements_item_created_idx
   on public.inventory_stock_movements(item_id, created_at desc);
 
-create table if not exists public.inventory_recipes (
+create table public.inventory_recipes (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null unique references public.products(id) on delete restrict,
   is_configured boolean not null default false,
   target_margin_percent numeric(6,3) check (target_margin_percent >= 0 and target_margin_percent < 100),
   updated_at timestamptz not null default now()
 );
-create table if not exists public.inventory_recipe_lines (
+create table public.inventory_recipe_lines (
   id uuid primary key default gen_random_uuid(),
   recipe_id uuid not null references public.inventory_recipes(id) on delete cascade,
   item_id uuid not null references public.inventory_items(id) on delete restrict,
@@ -59,15 +74,27 @@ create table if not exists public.inventory_recipe_lines (
   unique (recipe_id, item_id)
 );
 
-create table if not exists public.inventory_settings (
+create table public.inventory_settings (
   singleton boolean primary key default true check (singleton),
   automatic_inventory_enabled boolean not null default false,
   updated_at timestamptz not null default now()
 );
 insert into public.inventory_settings(singleton, automatic_inventory_enabled)
-values (true,false) on conflict (singleton) do nothing;
+values (true,false);
 
 -- RLS is an additional gate; explicit privileges below also restrict direct ledger writes.
+-- Explicit privilege model: authenticated admins may maintain item and recipe
+-- metadata, but no browser role may write ledger entries or activation settings.
+-- RLS further restricts these grants to is_admin() = true.
+revoke all on public.inventory_items, public.inventory_stock_movements,
+  public.inventory_recipes, public.inventory_recipe_lines,
+  public.inventory_settings from public, anon, authenticated;
+grant select, insert, update on public.inventory_items to authenticated;
+grant select on public.inventory_stock_movements to authenticated;
+grant select, insert, update on public.inventory_recipes to authenticated;
+grant select, insert, update on public.inventory_recipe_lines to authenticated;
+grant select on public.inventory_settings to authenticated;
+
 -- Deny all access by default except authenticated admins via existing is_admin().
 -- Service roles retain their normal elevated access.
 alter table public.inventory_items enable row level security;
@@ -82,8 +109,6 @@ create policy inventory_items_admin on public.inventory_items
 -- Ledger is read-only to browser clients, including admins. Future server-side
 -- transactional RPCs must append entries with validation and an audit trail.
 -- No direct INSERT, UPDATE, or DELETE from the client.
-revoke all on public.inventory_stock_movements from public, anon, authenticated;
-grant select on public.inventory_stock_movements to authenticated;
 create policy inventory_movements_admin_read on public.inventory_stock_movements
   for select to authenticated using ((select public.is_admin()));
 create policy inventory_recipes_admin on public.inventory_recipes
@@ -96,6 +121,7 @@ create policy inventory_settings_admin on public.inventory_settings
   for select to authenticated using ((select public.is_admin()));
 
 -- The inventory settings table is read-only to browser clients.
+-- Do not grant DELETE on any inventory table in this foundation.
 -- Other inventory tables still require privilege/RLS verification before deployment.
 -- No client-side update policy for activation. Activation must be implemented
 -- later through a verified, server-side admin-only function with validation.
