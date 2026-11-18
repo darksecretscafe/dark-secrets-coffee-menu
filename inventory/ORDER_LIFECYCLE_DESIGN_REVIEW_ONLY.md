@@ -104,3 +104,11 @@ Other transitions must follow the existing order status guards; do not invent ne
 - `order_items.packaging` permits `Regular Cup`, `Take Away Bottle`, `Add-on`; quantity 1–15, unit price >0, subtotal = unit_price * quantity. The `Add-on` meaning is **not yet established**. No oat modifier column was found in the inspected `order_items` schema.
 - `orders.order_method` permits only `Delivery`; payment method and status and refund request fields have validation CHECK constraints.
 - Inventory modifier mapping must not infer oat milk from price or `Add-on` without inspecting the checkout persistence implementation; bottle packaging replaces regular packaging and oat milk replaces dairy in proposed recipe mapping. Auto-deduction stays OFF.
+
+## Verified LIVE checkout oat modifier persistence (user-supplied function definitions, 2026-11-18)
+
+- `create_customer_order_secure` delegates to `create_customer_order_once`, which delegates to `create_customer_order` for order creation. Secure checkout uses idempotency locking and a checkout credential hash; preserve as-is.
+- `create_customer_order` determines oat substitution by the **exact suffix** ` · Sub Oat Milk` in `p_items[].product_name`. It validates `products.oat_eligible` and calculates unit price as product base price + 30 if oat + 15 if Take Away Bottle. It persists the full `product_name` (suffix included) and `packaging` to `order_items`; no separate oat column is required for the currently inspected checkout path.
+- `assign_order_item_product_id` uses the portion before ` · ` to match the base product name to `products.id`, preserving product linkage for oat variants.
+- Checkout accepts only `Regular Cup` or `Take Away Bottle` packaging, despite `order_items` CHECK allowing `Add-on`. No `Add-on` rows were found in the user-run query; **do not** treat `Add-on` as oat milk in the inventory mapping.
+- Inventory recipe logic should recognize oat substitution by exact suffix and use oat milk **instead of** dairy milk; bottle packaging replaces regular cup components. Verify exact live product names and recipe quantities before any automation. Never infer modifier from unit price alone.
