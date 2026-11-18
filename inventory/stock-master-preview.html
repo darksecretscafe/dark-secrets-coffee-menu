@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dark Secrets Coffee — Stock Master Preview</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#29221d;background:#f7f3ee}
+*{box-sizing:border-box}body{margin:0}.shell{max-width:1180px;margin:auto;padding:28px 18px 60px}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}h1{font-size:1.8rem;margin:0}h2{font-size:1.1rem;margin:0 0 14px}
+.muted{color:#766b62}.notice{background:#fff4d9;border:1px solid #e4c27d;padding:12px 16px;border-radius:10px;margin:18px 0}
+.card{background:#fff;border:1px solid #e6ded6;border-radius:14px;padding:20px;margin-top:18px;box-shadow:0 2px 12px #24180e08}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}input,select,textarea,button{font:inherit;padding:10px 12px;border-radius:8px;border:1px solid #cfc5bb}input,select,textarea{background:#fff}input[type=search]{flex:1;min-width:180px}
+button{cursor:pointer;background:#37271d;color:#fff;border-color:#37271d}button.secondary{background:#fff;color:#37271d}button:disabled{opacity:.5;cursor:not-allowed}
+table{border-collapse:collapse;width:100%;min-width:760px}th,td{text-align:left;padding:12px 10px;border-bottom:1px solid #eee7df;font-size:.92rem}th{background:#faf7f3;color:#5c5148}.scroll{overflow:auto}
+.pill{padding:4px 8px;border-radius:99px;background:#e9f5e9;color:#27672c;font-size:.8rem}.pill.off{background:#f1e8e2;color:#83523a}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}label{display:flex;flex-direction:column;gap:5px;font-size:.9rem;font-weight:600}
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}dialog{border:0;border-radius:16px;padding:24px;width:min(620px,calc(100% - 24px));box-shadow:0 20px 90px #0004}dialog::backdrop{background:#1a120e99}
+@media(max-width:650px){.grid{grid-template-columns:1fr}h1{font-size:1.4rem}}
+</style>
+</head>
+<body><main class="shell">
+<header><div><h1>Stock Master</h1><div class="muted">Dark Secrets Coffee · Inventory Management</div></div><button id="add">+ Add Inventory Item</button></header>
+<div class="notice"><strong>PREVIEW ONLY — NOT CONNECTED TO SUPABASE.</strong> Entries exist only in this browser tab. No LIVE inventory, orders, or products are changed.</div>
+<section class="card"><h2>Inventory Items</h2><div class="toolbar">
+<input id="search" type="search" placeholder="Search name, code or supplier" aria-label="Search inventory">
+<select id="type" aria-label="Filter item type"><option value="">All types</option><option value="ingredient">Ingredients</option><option value="packaging">Packaging</option></select>
+<select id="status" aria-label="Filter status"><option value="">All statuses</option><option value="active">Active</option><option value="inactive">Inactive</option></select>
+</div><div class="scroll"><table><thead><tr><th>Item code</th><th>Name</th><th>Type</th><th>Category</th><th>Base unit</th><th>Minimum stock</th><th>Supplier</th><th>Status</th><th>Action</th></tr></thead><tbody id="rows"></tbody></table></div><p id="count" class="muted"></p></section>
+<dialog id="editor"><form id="itemForm"><h2 id="formTitle">Add inventory item</h2><div class="grid">
+<label>Item code<input name="item_code" maxlength="40" required placeholder="e.g. ING-001"></label>
+<label>Name<input name="name" maxlength="100" required placeholder="e.g. Coffee Beans"></label>
+<label>Type<select name="item_type" required><option value="ingredient">Ingredient</option><option value="packaging">Packaging</option></select></label>
+<label>Category<input name="category" maxlength="60" required placeholder="e.g. Coffee"></label>
+<label>Base unit<select name="base_unit" required><option value="g">Grams (g)</option><option value="ml">Milliliters (ml)</option><option value="pcs">Pieces (pcs)</option></select></label>
+<label>Purchase unit<select name="preferred_purchase_unit" required></select></label>
+<label>Minimum stock (base unit)<input name="minimum_stock" type="number" min="0" step=".0001" value="0" required></label>
+<label>Preferred supplier<input name="preferred_supplier" maxlength="100"></label>
+<label>Brand<input name="brand" maxlength="100"></label>
+<label>Status<select name="is_active"><option value="true">Active</option><option value="false">Inactive</option></select></label>
+</div><label style="margin-top:12px">Notes<textarea name="notes" rows="2" maxlength="500"></textarea></label>
+<div class="actions"><button type="button" class="secondary" id="cancel">Cancel</button><button type="submit">Save in preview</button></div></form></dialog>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const items=[]; let editing=null;
+const unitOptions={g:['g','kg'],ml:['ml','l'],pcs:['pcs']};
+function setPurchaseUnit(preferred){const select=document.querySelector('[name=preferred_purchase_unit]');const unit=document.querySelector('[name=base_unit]').value;select.replaceChildren(...unitOptions[unit].map(u=>new Option(u,u)));if(preferred&&unitOptions[unit].includes(preferred))select.value=preferred;}
+function textCell(row,value){const td=document.createElement('td');td.textContent=String(value??'');row.append(td);return td;}
+function render(){const q=$('search').value.trim().toLowerCase(),t=$('type').value,s=$('status').value;const visible=items.filter(x=>(!q||[x.item_code,x.name,x.preferred_supplier].some(v=>String(v||'').toLowerCase().includes(q)))&&(!t||x.item_type===t)&&(!s||(x.is_active?'active':'inactive')===s));
+$('rows').replaceChildren();for(const x of visible){const tr=document.createElement('tr');[x.item_code,x.name,x.item_type,x.category,x.base_unit,x.minimum_stock,x.preferred_supplier||'—'].forEach(v=>textCell(tr,v));const status=textCell(tr,x.is_active?'Active':'Inactive');status.className=x.is_active?'pill':'pill off';const action=document.createElement('td'),btn=document.createElement('button');btn.className='secondary';btn.textContent='Edit';btn.addEventListener('click',()=>openEditor(x.item_code));action.append(btn);tr.append(action);$('rows').append(tr)}if(!visible.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=9;td.textContent='No inventory items yet. Add an item to preview the Stock Master.';tr.append(td);$('rows').append(tr)}$('count').textContent=visible.length+' of '+items.length+' preview item(s)';}
+function openEditor(code){editing=code||null;const form=$('itemForm');form.reset();const x=items.find(i=>i.item_code===code);$('formTitle').textContent=x?'Edit inventory item':'Add inventory item';for(const key of ['item_code','name','item_type','category','base_unit','minimum_stock','preferred_supplier','brand','notes','is_active'])if(x&&form.elements[key])form.elements[key].value=String(x[key]??'');setPurchaseUnit(x?.preferred_purchase_unit);form.elements.item_code.readOnly=!!x;$('editor').showModal();}
+$('add').addEventListener('click',()=>openEditor(null));$('cancel').addEventListener('click',()=>$('editor').close());document.querySelector('[name=base_unit]').addEventListener('change',()=>setPurchaseUnit());for(const id of ['search','type','status'])$(id).addEventListener(id==='search'?'input':'change',render);
+$('itemForm').addEventListener('submit',e=>{e.preventDefault();const f=e.currentTarget;const data=Object.fromEntries(new FormData(f).entries());data.item_code=data.item_code.trim();data.name=data.name.trim();data.category=data.category.trim();data.minimum_stock=Number(data.minimum_stock);data.is_active=data.is_active==='true';if(!data.item_code||!data.name||!data.category||!Number.isFinite(data.minimum_stock)||data.minimum_stock<0){alert('Please enter valid required fields.');return;}if(!editing&&items.some(x=>x.item_code.toLowerCase()===data.item_code.toLowerCase())){alert('Item code already exists in preview.');return;}if(editing){const index=items.findIndex(x=>x.item_code===editing);if(index<0)return;items[index]=data;}else items.push(data);$('editor').close();render();});
+setPurchaseUnit();render();
+</script></body></html>
