@@ -90,3 +90,10 @@ Other transitions must follow the existing order status guards; do not invent ne
 - Both refuse a second cancellation request if one already exists for the order. The two-argument overload rejects paid orders; the six-argument overload supports paid orders subject to GCash/Maya refund destination validation, and accepts unpaid orders without refund details.
 - This LIVE behavior differs from owner's stricter target policy of customer cancellation **only before acceptance**. Preserve LIVE as-is pending explicit decision/approval; do not silently tighten existing RPCs or change their grants.
 - Review admin cancellation/refund approval RPCs and relevant RLS/grants separately before claiming universal cancellation enforcement. Keep inventory changes review-only, auto-deduction OFF.
+
+## Verified admin cancellation approval RPC (read-only inspection, 2026-11-18)
+
+- `public.admin_review_cancellation(p_request_id uuid,p_decision text)` is `SECURITY DEFINER`, checks `auth.uid()` and `public.is_admin()`, accepts only `Approved`/`Rejected`, locks the associated order then cancellation request `FOR UPDATE`, and rejects already-reviewed requests.
+- Approval requires order status `Pending` or `Accepted`. For paid orders it validates verified payment and complete refund destination, marks request `Approved` and `refund_status='Refund Required'` with full `refund_amount=final_total`; for unpaid orders marks request `Approved`. Then updates order to `Cancelled` (existing AFTER UPDATE history trigger records status change). Rejection changes request to `Rejected` without changing order status.
+- The inspected customer request and admin approval RPCs both prevent cancellation at `Preparing` and later, but direct order status updates, other privileged functions, and RLS/grants still require separate review before asserting universal protection.
+- Planned inventory behavior: release reservation if accepted order is cancelled before preparation; do not auto-restock consumed ingredients after preparation; deduct only at completion per agreed target. Do not wire to LIVE triggers yet.
