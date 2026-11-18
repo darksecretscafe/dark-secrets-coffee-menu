@@ -55,5 +55,7 @@ $('adjustForm').addEventListener('submit',e=>{e.preventDefault();const d=Object.
 $('addLine').addEventListener('click',()=>{const drink=$('drink').value,code=$('recipeItem').value,qty=Number($('recipeQty').value),item=items.find(x=>x.code===code&&x.active),lines=recipes.get(drink)||[];if(!item||!Number.isFinite(qty)||qty<=0||qty>1e9){$('recipeMsg').textContent='Select an active item and positive quantity.';return}if(lines.some(x=>x.code===code)){$('recipeMsg').textContent='Item already in recipe. Remove before changing quantity.';return}lines.push({code,qty});recipes.set(drink,lines);$('recipeQty').value='';$('recipeMsg').textContent='';renderRecipe()});
 $('drink').addEventListener('change',renderRecipe);
 for(const btn of document.querySelectorAll('[data-tab]'))btn.addEventListener('click',()=>{for(const b of document.querySelectorAll('[data-tab]'))b.setAttribute('aria-selected',String(b===btn));for(const id of ['master','receiving','adjustments','costing','recipes'])$(id).classList.toggle('hidden',id!==btn.dataset.tab)});
-renderItems();selectItems();renderReceipts();renderAdjustments();renderCosting();renderRecipe();
+function activateTab(id){if(!['master','receiving','adjustments','costing','recipes'].includes(id))return;for(const b of document.querySelectorAll('[data-tab]'))b.setAttribute('aria-selected',String(b.dataset.tab===id));for(const tab of ['master','receiving','adjustments','costing','recipes'])$(tab).classList.toggle('hidden',tab!==id)}
+window.addEventListener('hashchange',()=>activateTab(location.hash.slice(1)));
+renderItems();selectItems();renderReceipts();renderAdjustments();renderCosting();renderRecipe();activateTab(location.hash.slice(1));
 </script></body></html>
