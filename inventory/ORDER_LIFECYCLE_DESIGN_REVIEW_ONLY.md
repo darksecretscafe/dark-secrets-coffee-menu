@@ -18,6 +18,14 @@
 4. `inventory_recipe_versions` and variant override rules: immutable approved recipe snapshots for accepted orders; oat replaces regular milk and bottle replaces applicable cup/lid/straw. Exact modifier payload values must be verified from checkout and persisted order items before implementation.
 5. A reconciliation/audit view (or admin query) that compares accepted reservations, completed consumption, stock movement ledger and order status history.
 
+## Verified LIVE trigger behavior (user-supplied read-only function definitions, 2026-11-18)
+
+- `ds_guard_order_status_change()`: no-op for unchanged status; rejects **all** changes when old status is `Completed`. For previously `Paid` orders transitioning to `Cancelled` or `Declined`, requires `Cancelled` from `Pending`/`Accepted` and an approved full-refund request with specified GCash/Maya refund destination details. **This does not establish a universal ban on `Preparing → Cancelled` for unpaid orders.**
+- `ds_guard_preparation_on_cancellation()`: blocks transition **into `Preparing`** when a cancellation request has `request_status='Requested'`. It does **not** itself block transition **out of `Preparing` to `Cancelled`**.
+- `ds_record_order_status_history()`: AFTER UPDATE writes one history row on status change, with `clock_timestamp()`. `order_status_history.id` is a bigint primary key (verified). It is a potential idempotency source for later processing; ordering, transaction integration, and exact event delivery semantics still need review.
+- The combined function bodies alone do not prove a customer can cancel after preparation; the customer-facing cancellation endpoint and RLS may enforce additional restrictions. **Do not assert the live system is vulnerable without checking those layers.**
+- Owner rule remains: customer cancellation only before acceptance; **never after preparation starts**. Future enforcement must be server-side and independently tested for paid/unpaid paths. No LIVE edits authorized.
+
 ## Cancellation permission and preparation lock (owner clarification)
 
 - Customer (CS) may cancel **only before branch acceptance**, consistent with existing checkout rules. Once accepted, customer cancellation is unavailable even if kitchen preparation has not started.
