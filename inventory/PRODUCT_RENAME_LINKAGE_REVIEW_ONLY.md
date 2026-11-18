@@ -27,3 +27,15 @@ Status: design and test contract only. No LIVE Supabase changes, no migrations e
 
 ## Scope
 This document defines behavior for Phase 2. Persistent storage, product join, auth/RLS tests and browser acceptance tests are not yet implemented. Owner must approve deployment separately.
+
+## Verified product metadata from owner read-only inspection (2026-11-18)
+- `public.products.id`: UUID, NOT NULL, primary key.
+- `name`: text NOT NULL; `price`: numeric NOT NULL; `is_active`: boolean NOT NULL; `oat_eligible`: boolean NOT NULL.
+- `product_code`: text NOT NULL; `category_id`: bigint NOT NULL.
+- Other columns: `category` text NOT NULL, `created_at` and `updated_at` timestamptz NOT NULL, `image_path` nullable text, `description` nullable varchar.
+- Owner supplied product policies: admin-only INSERT, UPDATE, DELETE, all-product SELECT; active-product SELECT for anon/authenticated. RLS enablement and `is_admin()` implementation not yet verified by these results.
+- Do not modify LIVE price or products. Proposed recipe join: `inventory_recipes.product_id = products.id`, read `products.name` dynamically. A draft selling price must remain separate from `products.price`.
+
+## Remaining blocking verification
+- Check product editor code for UPDATE-in-place vs DELETE/INSERT and triggers affecting ID.
+- Confirm RLS enabled and existing FK/deletion behavior before approving a production migration.
