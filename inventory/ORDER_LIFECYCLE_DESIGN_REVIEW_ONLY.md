@@ -82,3 +82,11 @@ Other transitions must follow the existing order status guards; do not invent ne
 - Whether existing order status updates can happen offline or be reordered, and which event ID is stable.
 - Exact product modifier payloads and packaging components.
 - Whether recipe versions can change while an order is accepted.
+
+## Verified customer cancellation RPCs (read-only inspection, 2026-11-18)
+
+- Both LIVE overloads of `public.customer_request_cancellation` use `SECURITY DEFINER`, `search_path=''`, validate a 64-character lowercase hex tracking token and 10–500-character reason, and lock the matching `orders` row with `FOR UPDATE`.
+- Both explicitly allow cancellation **requests** when the order status is `Pending` **or `Accepted`**; requests are rejected for `Preparing`, `Ready`, `Out for Delivery`, `Completed`, and other statuses. This is a request eligibility check, not proof that all direct order status updates are blocked.
+- Both refuse a second cancellation request if one already exists for the order. The two-argument overload rejects paid orders; the six-argument overload supports paid orders subject to GCash/Maya refund destination validation, and accepts unpaid orders without refund details.
+- This LIVE behavior differs from owner's stricter target policy of customer cancellation **only before acceptance**. Preserve LIVE as-is pending explicit decision/approval; do not silently tighten existing RPCs or change their grants.
+- Review admin cancellation/refund approval RPCs and relevant RLS/grants separately before claiming universal cancellation enforcement. Keep inventory changes review-only, auto-deduction OFF.
