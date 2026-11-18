@@ -97,3 +97,10 @@ Other transitions must follow the existing order status guards; do not invent ne
 - Approval requires order status `Pending` or `Accepted`. For paid orders it validates verified payment and complete refund destination, marks request `Approved` and `refund_status='Refund Required'` with full `refund_amount=final_total`; for unpaid orders marks request `Approved`. Then updates order to `Cancelled` (existing AFTER UPDATE history trigger records status change). Rejection changes request to `Rejected` without changing order status.
 - The inspected customer request and admin approval RPCs both prevent cancellation at `Preparing` and later, but direct order status updates, other privileged functions, and RLS/grants still require separate review before asserting universal protection.
 - Planned inventory behavior: release reservation if accepted order is cancelled before preparation; do not auto-restock consumed ingredients after preparation; deduct only at completion per agreed target. Do not wire to LIVE triggers yet.
+
+## Verified LIVE CHECK constraints (read-only inspection, 2026-11-18)
+
+- `orders.status` permits exactly: `Pending`, `Accepted`, `Declined`, `Preparing`, `Ready`, `Out for Delivery`, `Completed`, `Cancelled`. A CHECK constraint limits values but **does not** enforce transitions.
+- `order_items.packaging` permits `Regular Cup`, `Take Away Bottle`, `Add-on`; quantity 1–15, unit price >0, subtotal = unit_price * quantity. The `Add-on` meaning is **not yet established**. No oat modifier column was found in the inspected `order_items` schema.
+- `orders.order_method` permits only `Delivery`; payment method and status and refund request fields have validation CHECK constraints.
+- Inventory modifier mapping must not infer oat milk from price or `Add-on` without inspecting the checkout persistence implementation; bottle packaging replaces regular packaging and oat milk replaces dairy in proposed recipe mapping. Auto-deduction stays OFF.
