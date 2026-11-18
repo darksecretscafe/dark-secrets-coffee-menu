@@ -24,6 +24,15 @@
 - No direct client ledger writes. Design secure RPCs for opening stock, receiving, adjustments, wastage and corrections; each transaction must validate quantities, permissions, and concurrency.
 - The present one-recipe-per-product schema is a base recipe only. Variant overrides and weighted-average cost calculations require separate review before deployment.
 
+## Proposed grants and safety boundaries
+- `authenticated`: SELECT/INSERT/UPDATE for stock master and base recipes, with admin-only RLS; no DELETE.
+- `authenticated`: SELECT only for stock movement ledger and activation settings, with admin-only RLS.
+- `anon` and `PUBLIC`: no inventory table grants. Service role and table owner privileges must be audited separately.
+- Migration aborts if any of the five proposed inventory tables already exists; this is intentional, not an idempotent upgrade.
+- Confirm database backup restore procedure and prepare rollback via separately reviewed DROP statements, only if the new tables contain no production data.
+- After any approved deployment, test anon, non-admin, admin, and service-role paths and verify settings flag remains OFF.
+- The SQL has not been executed or validated against a disposable Supabase database; do not treat static review as deployment approval.
+
 ## Before any Supabase execution
 1. Verify actual `products.id` type is UUID and `is_admin()` signature/security behavior.
 2. Inspect existing database tables/functions/triggers and ensure no name conflicts.
