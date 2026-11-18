@@ -33,3 +33,10 @@ E. Later separate review for order lifecycle integration and stock reservations.
 
 ## Current limitation
 All integrated-preview entries remain in tab memory and disappear on refresh. The owner cannot yet save real inventory data.
+
+## Product linkage verification — 2026-11-18
+- Owner verified `public.products` has `id uuid` primary key, `name text`, `price numeric`, `is_active boolean`, `oat_eligible boolean`, `product_code text`, and `category_id bigint`.
+- Owner verified `public.products` has `relrowsecurity = true`. Shared policies allow admin-only INSERT/UPDATE/DELETE and public read of active products; this does not independently audit `public.is_admin()`.
+- Reviewed existing menu editor `admin-products.js`: editing an existing product performs `update(values).eq('id', product.id)`, preserving the product UUID. Category-sync trigger definition changes category fields, not ID.
+- Recipe storage should reference `public.products(id)` and fetch the current `products.name` on reads. Draft selling prices must not update `products.price`.
+- **Still pending:** inspect `public.is_admin()` implementation, actual database FK dependencies and existing inventory object collisions; implement and test admin-only RPCs in isolated environment. No SQL has been executed or merged by this branch.
