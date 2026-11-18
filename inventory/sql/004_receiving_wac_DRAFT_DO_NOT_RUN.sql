@@ -80,6 +80,8 @@ begin
     or p_total_cost <> round(p_total_cost,4) then
    raise exception 'Invalid numeric precision or amount';
  end if;
+ -- Acquire idempotency lock before item lock to avoid lock-order inversion.
+ perform pg_advisory_xact_lock(hashtextextended(p_request_key::text, 0));
  -- Item row lock serializes receiving for this item, including same-key replay.
  select base_unit, is_active into v_item
  from public.inventory_items where id=p_item_id for update;
@@ -97,8 +99,7 @@ begin
    raise exception 'Converted quantity exceeds storage capacity';
  end if;
 
- -- Advisory lock keyed by request UUID prevents same key racing across items.
- perform pg_advisory_xact_lock(hashtextextended(p_request_key::text, 0));
+ -- Same-key requests are serialized by the earlier advisory lock.
  select * into v_old from public.inventory_receive_requests
  where request_key=p_request_key;
  if found then
@@ -154,7 +155,5 @@ commit;
 -- OPEN REVIEW ISSUES: Requires test of SECURITY DEFINER owner, RLS and is_admin,
 -- audit of immutable ledger protection, and overflow/precision boundaries.
 -- Idempotent replay returns CURRENT balance/WAC, not historical post-receipt snapshot.
--- Different-item same-key requests can deadlock under simultaneous opposite item
--- locks; production design should acquire idempotency lock before item lock.
 -- Current stock movement ledger lacks total receipt cost as a first-class column:
 -- historical WAC reconstruction should be designed before production.
