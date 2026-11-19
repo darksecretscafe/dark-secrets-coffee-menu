@@ -29,7 +29,13 @@ for (const invalid of [
 ]) assert.throws(() => ctx.DS_DRAFT_publishMenuRows(invalid));
 assert.equal(ctx.DS_DRAFT_currentMenuRows(), prior, 'Bad snapshots must not overwrite good state');
 assert.equal(received.length, 1, 'Bad snapshots must not notify inventory');
-const reject = ctx.DS_DRAFT_attachInventoryReceiver(() => { throw Error('receiver refused'); });
+// Attaching a receiver replays the latest snapshot immediately.
+assert.throws(() => ctx.DS_DRAFT_attachInventoryReceiver(() => { throw Error('receiver refused'); }), /receiver refused/);
+assert.equal(ctx.DS_DRAFT_currentMenuRows(), prior, 'Rejected attachment must preserve last good snapshot');
+// A receiver that accepts the replay can still reject a later publish.
+const reject = ctx.DS_DRAFT_attachInventoryReceiver(rows => {
+  if (rows[0].id === id2) throw Error('receiver refused');
+});
 assert.throws(() => ctx.DS_DRAFT_publishMenuRows([{ id: id2, name: 'Americano', price: 100 }]), /receiver refused/);
 assert.equal(ctx.DS_DRAFT_currentMenuRows(), prior, 'Receiver rejection must preserve last good snapshot');
 reject();
