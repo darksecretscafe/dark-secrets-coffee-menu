@@ -33,6 +33,7 @@ psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_bootstrap_LOCAL_ONLY.
 psql -X -v ON_ERROR_STOP=1 -f inventory/sql/017_phase2_recipe_lock_rebuilt_REVIEW_ONLY_DO_NOT_RUN.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_catalog_assertions_LOCAL_ONLY.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_security_assertions_v2_LOCAL_ONLY.sql
+psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_role_rls_LOCAL_ONLY.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_rpc_behavior_LOCAL_ONLY.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_receiving_wac_replay_LOCAL_ONLY.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_correction_wastage_LOCAL_ONLY.sql
