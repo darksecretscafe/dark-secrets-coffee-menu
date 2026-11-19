@@ -15,7 +15,14 @@ if ! command -v psql >/dev/null 2>&1; then
 fi
 # Query actual connection target before executing any DDL.
 identity="$(psql -X -A -t -v ON_ERROR_STOP=1 -c "select current_database() || '|' || coalesce(host(inet_server_addr()),'SOCKET')")"
-if [[ "$identity" != 'dsc_inventory_disposable_017|127.0.0.1' && "$identity" != 'dsc_inventory_disposable_017|::1' ]]; then
+# Docker-published localhost ports report the container's private bridge IP.
+# Allow that only on GitHub Actions with the explicit ephemeral-service marker.
+allow_ephemeral_ci=false
+if [[ "${GITHUB_ACTIONS:-}" == "true" && "${DSC_EPHEMERAL_POSTGRES_CI:-}" == "YES" &&
+      "$identity" =~ ^dsc_inventory_disposable_017\\|172\\.(1[6-9]|2[0-9]|3[01])\\.[0-9]{1,3}\\.[0-9]{1,3}$ ]]; then
+  allow_ephemeral_ci=true
+fi
+if [[ "$identity" != 'dsc_inventory_disposable_017|127.0.0.1' && "$identity" != 'dsc_inventory_disposable_017|::1' && "$allow_ephemeral_ci" != true ]]; then
   echo "REFUSED: unexpected PostgreSQL server identity: $identity" >&2; exit 2
 fi
 # Manual confirmation prevents accidental execution after an environment change.
