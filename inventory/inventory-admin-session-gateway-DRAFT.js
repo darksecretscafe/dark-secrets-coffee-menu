@@ -17,7 +17,6 @@ export async function createInventoryAdminSessionGateway(client) {
   if (isAdmin !== true) throw new Error('Inventory access requires admin privileges');
   const rawApi = createInventoryDraftApi(client);
   async function verifyBeforeWrite() {
-    userId: userData.user.id,
 
       const { data: current, error: authError } = await client.auth.getUser();
       if (authError) throw authError;
