@@ -46,7 +46,28 @@ jobs:
           PGPASSWORD: local-ci-only-password
           PGDATABASE: dsc_inventory_disposable_017
           DSC_DISPOSABLE_DB_CONFIRM: YES_DESTROY_DISPOSABLE_017
-        run: bash inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          bash inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh 2>&1 | tee inventory-postgres-017-ci.log
+      - name: Record SQL acceptance outcome
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "### SQL 017 disposable PostgreSQL: PASS" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### SQL 017 disposable PostgreSQL: FAILED or incomplete" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Runs only against temporary PostgreSQL 16; this is not LIVE release approval." >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve SQL test logs for failure diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-postgres-017-ci-log
+          path: inventory-postgres-017-ci.log
+          if-no-files-found: ignore
+          retention-days: 7
 
 # This job runs ONLY against an ephemeral GitHub Actions PostgreSQL service.
 # No Supabase secrets, production connections, migrations, or deployment.
