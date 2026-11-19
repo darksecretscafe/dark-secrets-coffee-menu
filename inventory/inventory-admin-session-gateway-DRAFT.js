@@ -15,11 +15,10 @@ export async function createInventoryAdminSessionGateway(client) {
   const { data: isAdmin, error: adminError } = await client.rpc('is_admin');
   if (adminError) throw adminError;
   if (isAdmin !== true) throw new Error('Inventory access requires admin privileges');
-  const api = createInventoryDraftApi(client);
-  return Object.freeze({
+  const rawApi = createInventoryDraftApi(client);
+  async function verifyBeforeWrite() {
     userId: userData.user.id,
-    api,
-    async verifyBeforeWrite() {
+
       const { data: current, error: authError } = await client.auth.getUser();
       if (authError) throw authError;
       if (!current?.user?.id || current.user.id !== userData.user.id) {
@@ -29,6 +28,16 @@ export async function createInventoryAdminSessionGateway(client) {
       if (permissionError) throw permissionError;
       if (permitted !== true) throw new Error('Inventory admin privileges revoked');
       return true;
-    }
+  }
+  const api = Object.freeze({
+    listItems: rawApi.listItems,
+    listMovements: rawApi.listMovements,
+    listRecipes: rawApi.listRecipes,
+    listRecipeLines: rawApi.listRecipeLines,
+    ...Object.fromEntries(['saveItem','receive','correct','saveRecipe','reviewRecipePrice','approveRecipe'].map(name => [name, async (...args) => {
+      await verifyBeforeWrite();
+      return rawApi[name](...args);
+    }]))
   });
+  return Object.freeze({ userId: userData.user.id, api, verifyBeforeWrite });
 }
