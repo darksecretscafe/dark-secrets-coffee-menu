@@ -15,8 +15,11 @@ const client={
 const session=await createInventoryAdminSessionGateway(client);
 assert.equal(session.userId,'admin-1');
 assert.equal(await session.verifyBeforeWrite(),true);
+await session.api.approveRecipe('product-1');
 admin=false;
 await assert.rejects(()=>session.verifyBeforeWrite(),/revoked/);
+await assert.rejects(()=>session.api.approveRecipe('product-1'),/revoked/);
+await assert.rejects(()=>session.api.receive({}),/revoked/);
 await assert.rejects(()=>createInventoryAdminSessionGateway(client),/admin privileges/);
 admin=true; userId='admin-2';
 await assert.rejects(()=>session.verifyBeforeWrite(),/session changed/);
