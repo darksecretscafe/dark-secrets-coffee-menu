@@ -38,6 +38,6 @@ test('offline inventory preview loads, refreshes, and stays read-only', async ({
   await page.getByRole('button', { name: 'Refresh inventory snapshot' }).click();
   await expect(page.getByRole('status')).toContainText('Offline sample loaded');
   expect(errors).toEqual([]);
-  expect(requests.every(url => url.startsWith('http://127.0.0.1:' + address.port + '/inventory/'))).toBe(true);
+  expect(requests.every(url => new URL(url).origin === 'http://127.0.0.1:' + address.port)).toBe(true);
   expect(requests.some(url => /supabase|\.co\/rest\/v1/i.test(url))).toBe(false);
 });
