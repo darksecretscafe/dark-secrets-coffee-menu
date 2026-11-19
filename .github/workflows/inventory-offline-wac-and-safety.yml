@@ -1,0 +1,44 @@
+name: Inventory offline WAC and safety checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - 'inventory/tests/wac_arithmetic_model.py'
+      - 'inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh'
+      - '.github/workflows/inventory-offline-wac-and-safety.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-wac:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify decimal WAC arithmetic (no database)
+        run: python inventory/tests/wac_arithmetic_model.py
+      - name: Validate local PostgreSQL runner syntax
+        run: bash -n inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh
+      - name: Confirm PostgreSQL runner refuses unsafe environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          output="$(env -u PGHOST -u PGDATABASE -u DATABASE_URL -u PGSERVICE -u PGHOSTADDR -u PGOPTIONS bash inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh 2>&1)"
+          code=$?
+          set -e
+          if [[ "$code" -eq 0 ]] || [[ "$output" != *'REFUSED: PGHOST must be explicit localhost'* ]]; then
+            echo 'FAIL: local PostgreSQL runner did not reject missing host'
+            exit 1
+          fi
+          echo 'PASS: unsafe database target rejected'
+# No database credentials, network database connection, SQL execution or deployment.
