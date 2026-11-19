@@ -4,6 +4,8 @@ begin;
 create role anon nologin;
 create role authenticated nologin;
 create schema auth;
+-- Match Supabase's auth schema visibility for API roles in this disposable stub.
+grant usage on schema auth to anon, authenticated;
 create function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
 $$;
