@@ -9,6 +9,7 @@ on:
       - 'inventory/sql/017_phase2_recipe_lock_rebuilt_REVIEW_ONLY_DO_NOT_RUN.sql'
       - 'inventory/tests/postgres_017_*_LOCAL_ONLY.sql'
       - 'inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh'
+      - 'inventory/tests/sql-017-preflight-static.test.mjs'
       - '.github/workflows/inventory-disposable-postgres-017.yml'
 
 permissions:
@@ -36,6 +37,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Run offline SQL 017 preflight guards
+        run: node inventory/tests/sql-017-preflight-static.test.mjs
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Execute isolated SQL 017 acceptance tests
