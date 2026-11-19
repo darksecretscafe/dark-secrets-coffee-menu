@@ -24,6 +24,8 @@ permissions:
 jobs:
   browser-smoke:
     runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -34,8 +36,6 @@ jobs:
           node-version: '22'
       - name: Install isolated browser test dependency
         run: npm install --no-save --no-package-lock @playwright/test@1.56.1
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
       - name: Run offline browser smoke test
         run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs
         env:
