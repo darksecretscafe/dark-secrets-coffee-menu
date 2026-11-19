@@ -32,7 +32,7 @@ begin
   return new;
 end $$;
 create trigger inventory_recipe_invalidate_review_draft
-before update on public.inventory_recipes
+before update of is_configured, target_margin_percent, updated_at on public.inventory_recipes
 for each row execute function public.inventory_recipe_invalidate_review_draft();
 
 -- Price review must follow a successfully saved menu price.
