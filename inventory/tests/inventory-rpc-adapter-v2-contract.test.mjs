@@ -24,17 +24,22 @@ await api.receive(receipt);
 await api.receive(receipt); // Explicit caller retry uses identical request key.
 await api.correct({ itemId: 'item-1', type: 'wastage', quantityDelta: -100, reason: 'Spill', requestKey: key });
 await api.saveRecipe({ productId: 'product-uuid', lines: [{ itemId: 'item-1', quantityBase: 18 }] });
+await api.reviewRecipePrice('product-uuid');
+await api.approveRecipe('product-uuid');
 await api.saveItem({ code: 'BEAN', name: 'Beans', category: 'Coffee', type: 'ingredient', baseUnit: 'g', purchaseUnit: 'kg', minimumStock: 0, active: true });
 for (const fn of ['listItems','listMovements','listRecipes','listRecipeLines']) await api[fn]();
-assert.deepEqual(calls.slice(0,5).map(x=>x.name), [
+assert.deepEqual(calls.slice(0,7).map(x=>x.name), [
   'inventory_receive_stock_draft','inventory_receive_stock_draft','inventory_correct_stock_draft',
-  'inventory_save_recipe_draft','inventory_save_item_draft'
+  'inventory_save_recipe_draft','inventory_review_recipe_price_draft',
+  'inventory_approve_recipe_draft','inventory_save_item_draft'
 ]);
 assert.equal(calls[0].args.p_request_key, key);
 assert.equal(calls[1].args.p_request_key, key);
 assert.equal(calls[2].args.p_request_key, key);
 assert.deepEqual(calls[3].args.p_lines, [{ item_id: 'item-1', quantity_base: 18 }]);
-assert.deepEqual(calls.slice(5).map(x=>x.table), [
+assert.deepEqual(calls[4].args, { p_product_id: 'product-uuid' });
+assert.deepEqual(calls[5].args, { p_product_id: 'product-uuid' });
+assert.deepEqual(calls.slice(7).map(x=>x.table), [
   'inventory_items','inventory_stock_movements','inventory_recipes','inventory_recipe_lines'
 ]);
 const denied = createInventoryDraftApi({
@@ -43,5 +48,6 @@ const denied = createInventoryDraftApi({
 });
 await assert.rejects(() => denied.saveRecipe({ productId: 'x', lines: [] }), { message: 'permission denied' });
 await assert.rejects(() => denied.listItems(), { message: 'permission denied' });
+await assert.rejects(() => denied.approveRecipe('product-uuid'), { message: 'permission denied' });
 console.log('PASS: v2 offline adapter mapping, UUID request-key guard, retry key stability, error propagation');
 // NOTE: Does not prove server-side idempotency, RLS, WAC, or production readiness.
