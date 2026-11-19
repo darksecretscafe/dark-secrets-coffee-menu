@@ -11,7 +11,7 @@ create function auth.uid() returns uuid language sql stable as $$
 $$;
 create table public.products (
   id uuid primary key,
-  name text not null
+  name text not null, price numeric not null default 65
 );
 create function public.is_admin() returns boolean language sql stable as $$
   select auth.uid() = '11111111-1111-4111-8111-111111111111'::uuid
