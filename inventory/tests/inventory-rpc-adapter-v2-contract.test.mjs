@@ -15,8 +15,8 @@ const key = '123e4567-e89b-42d3-a456-426614174000';
 assert(Object.isFrozen(api));
 assert.throws(() => createInventoryDraftApi(null), TypeError);
 for (const bad of [undefined, '', 'receive-key', '123e4567-e89b-42d3-a456-42661417400z']) {
-  await assert.rejects(() => api.receive({ itemId: 'item-1', quantity: 1, unit: 'kg', totalCost: 100, reference: 'R1', requestKey: bad }), TypeError);
-  await assert.rejects(() => api.correct({ itemId: 'item-1', type: 'wastage', quantityDelta: -1, reason: 'Spill', requestKey: bad }), TypeError);
+  assert.throws(() => api.receive({ itemId: 'item-1', quantity: 1, unit: 'kg', totalCost: 100, reference: 'R1', requestKey: bad }), TypeError);
+  assert.throws(() => api.correct({ itemId: 'item-1', type: 'wastage', quantityDelta: -1, reason: 'Spill', requestKey: bad }), TypeError);
 }
 assert.equal(calls.length, 0, 'Invalid request keys must never invoke RPC');
 const receipt = { itemId: 'item-1', quantity: 2, unit: 'kg', totalCost: 400, reference: 'R1', requestKey: key };
