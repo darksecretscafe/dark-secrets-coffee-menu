@@ -38,6 +38,15 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const totalCost=el('input');totalCost.type='number';totalCost.min='0';totalCost.step='any';totalCost.placeholder='Total cost';
   const reference=el('input');reference.placeholder='Supplier invoice / reference';
   const receiveButton=el('button','Save stock receipt');receiveButton.type='button';
+  const correctionTitle=el('h3','Stock adjustment / wastage');
+  const correctionItem=el('select');
+  const correctionType=el('select');
+  for(const type of ['adjustment','wastage']){const option=el('option',type);option.value=type;correctionType.append(option);}
+  const correctionQuantity=el('input');correctionQuantity.type='number';correctionQuantity.step='any';correctionQuantity.placeholder='Signed base-unit quantity (negative for removal)';
+  const correctionValue=el('input');correctionValue.type='number';correctionValue.step='any';correctionValue.min='0';correctionValue.placeholder='Added stock value (positive adjustments only)';
+  const correctionReason=el('input');correctionReason.placeholder='Reason for correction';
+  const correctionButton=el('button','Save stock correction');correctionButton.type='button';
+  let pendingCorrection=null;
   const recipeEditTitle=el('h3','Save recipe ingredients');
   const ingredientItem=el('select');
   const ingredientQty=el('input');ingredientQty.type='number';ingredientQty.min='0.0001';ingredientQty.step='any';ingredientQty.placeholder='Quantity in base unit';
@@ -61,7 +70,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const approveButton = el('button','Approve recipe');
   reviewButton.type='button';approveButton.type='button';
   const priceNote=el('p','Change and save selling prices in Menu Management before review.');
-  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,stockTitle,stockItem,qty,totalCost,reference,receiveButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,reviewButton,approveButton);
+  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,stockTitle,stockItem,qty,totalCost,reference,receiveButton,correctionTitle,correctionItem,correctionType,correctionQuantity,correctionValue,correctionReason,correctionButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,reviewButton,approveButton);
   let products=[];
   async function loadProducts() {
     const { data,error }=await client.from('products').select('id,name,price');
@@ -79,10 +88,10 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     const projection=calculateInventoryCosting(snapshot,products);
     const balances=new Map(projection.balances.map(balance=>[balance.itemId,balance]));
     body.replaceChildren();
-    stockItem.replaceChildren();ingredientItem.replaceChildren();
+    stockItem.replaceChildren();ingredientItem.replaceChildren();correctionItem.replaceChildren();
     for(const item of snapshot.items){
       if(item.is_active){
-        for(const select of [stockItem,ingredientItem]){
+        for(const select of [stockItem,ingredientItem,correctionItem]){
           const option=el('option',item.name+' ('+item.base_unit+')');
           option.value=item.id;select.append(option);
         }
@@ -147,6 +156,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       status.textContent='Saved successfully to database. '+snapshot.items.length+' items refreshed.';
       if(method==='saveRecipe'){lines=[];renderLines();}
       if(method==='receive'){pendingReceipt=null;qty.value='';totalCost.value='';reference.value='';}
+      if(method==='correct'){pendingCorrection=null;correctionQuantity.value='';correctionValue.value='';correctionReason.value='';}
     }catch(error){status.textContent='Save failed: '+error.message;}
     finally{button.disabled=false;}
   }
@@ -173,6 +183,30 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       pendingReceipt={fingerprint,requestKey};
     }
     saveAction('receive',{...receipt,requestKey:pendingReceipt.requestKey},receiveButton);
+  });
+  correctionButton.addEventListener('click',()=>{
+    const item=controller.current()?.items.find(x=>x.id===correctionItem.value);
+    const quantityDelta=Number(correctionQuantity.value);
+    const type=correctionType.value;
+    const reason=correctionReason.value.trim();
+    const addedValue=quantityDelta>0?Number(correctionValue.value):null;
+    if(!item||!correctionQuantity.value.trim()||!Number.isFinite(quantityDelta)||quantityDelta===0||
+       !Number.isFinite(quantityDelta*10000)||Math.abs(quantityDelta)>999999999999.9999||
+       !reason||reason.length>250||(type==='wastage'&&quantityDelta>=0)||
+       (quantityDelta>0&&(type!=='adjustment'||!correctionValue.value.trim()||!Number.isFinite(addedValue)||addedValue<0))){
+      status.textContent='Enter valid signed quantity, reason, and added value for positive adjustments';return;
+    }
+    const correction={itemId:item.id,type,quantityDelta,addedValue,reason};
+    const fingerprint=JSON.stringify(correction);
+    if(pendingCorrection&&pendingCorrection.fingerprint!==fingerprint){
+      status.textContent='Previous correction outcome uncertain. Reconcile stock before changing this request.';return;
+    }
+    if(!pendingCorrection){
+      const requestKey=globalThis.crypto?.randomUUID?.();
+      if(!requestKey){status.textContent='Secure request ID unavailable';return;}
+      pendingCorrection={fingerprint,requestKey};
+    }
+    saveAction('correct',{...correction,requestKey:pendingCorrection.requestKey},correctionButton);
   });
   refreshButton.addEventListener('click',()=>{refresh().catch(()=>{});});
   reviewButton.addEventListener('click',()=>{mutate('reviewRecipePrice');});
