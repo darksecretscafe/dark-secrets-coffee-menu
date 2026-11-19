@@ -1,0 +1,85 @@
+name: Inventory SQL 017 disposable PostgreSQL validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'inventory/**'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
+      - '.github/workflows/inventory-*.yml'
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - 'inventory/sql/017_phase2_recipe_lock_rebuilt_REVIEW_ONLY_DO_NOT_RUN.sql'
+      - 'inventory/tests/postgres_017_*_LOCAL_ONLY.sql'
+      - 'inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh'
+      - 'inventory/tests/sql-017-preflight-static.test.mjs'
+      - '.github/workflows/inventory-disposable-postgres-017.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-disposable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local-ci-only-password
+          POSTGRES_DB: dsc_inventory_disposable_017
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dsc_inventory_disposable_017"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Run offline SQL 017 preflight guards
+        run: node inventory/tests/sql-017-preflight-static.test.mjs
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Execute isolated SQL 017 acceptance tests
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: local-ci-only-password
+          PGDATABASE: dsc_inventory_disposable_017
+          DSC_DISPOSABLE_DB_CONFIRM: YES_DESTROY_DISPOSABLE_017
+          DSC_EPHEMERAL_POSTGRES_CI: YES
+        shell: bash
+        run: |
+          set -o pipefail
+          bash inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh 2>&1 | tee inventory-postgres-017-ci.log
+      - name: Record SQL acceptance outcome
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${{ job.status }}" == "success" ]]; then
+            echo "### SQL 017 disposable PostgreSQL: PASS" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### SQL 017 disposable PostgreSQL: FAILED or incomplete" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "Runs only against temporary PostgreSQL 16; this is not LIVE release approval." >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve SQL test logs for failure diagnosis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-postgres-017-ci-log
+          path: inventory-postgres-017-ci.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+# This job runs ONLY against an ephemeral GitHub Actions PostgreSQL service.
+# No Supabase secrets, production connections, migrations, or deployment.
+# Passing these tests does NOT establish Supabase auth/RLS parity or release approval.
