@@ -2,6 +2,13 @@ name: Inventory offline preview browser smoke test
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'inventory/**'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
+      - '.github/workflows/inventory-*.yml'
   push:
     branches:
       - feature/inventory-phase1-foundation
