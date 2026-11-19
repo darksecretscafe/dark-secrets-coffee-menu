@@ -14,4 +14,9 @@ assert.match(source,/renderCosting\(outcome\.snapshot\)/,'Approval refreshes cos
 assert.match(source,/renderCosting\(snapshot\)/,'Stock and recipe saves refresh costing view');
 assert.match(source,/WAC \/ base unit/,'Show WAC');
 assert.match(source,/Recipe costing overview/,'Show recipe costing overview');
+assert.match(source,/Stock adjustment \/ wastage/,'Correction UI exists');
+assert.match(source,/pendingCorrection\.requestKey/,'Correction retry uses same request key');
+assert.match(source,/pendingCorrection\.fingerprint!==fingerprint/,'Changed correction cannot reuse key');
+assert.match(source,/saveAction\('correct'/,'Correction uses persisted RPC controller');
+assert.match(source,/pendingCorrection=null;correctionQuantity\.value/,'Correction retry key clears only after confirmed success');
 console.log('PASS: draft UI purchase-unit mapping and receipt retry guard');
