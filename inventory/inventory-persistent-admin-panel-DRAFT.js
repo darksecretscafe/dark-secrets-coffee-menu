@@ -5,6 +5,7 @@
  */
 import { createInventoryAdminSessionGateway } from './inventory-admin-session-gateway-DRAFT.js';
 import { createInventoryPersistenceController } from './inventory-persistence-controller-DRAFT.js';
+import { calculateInventoryCosting } from './inventory-costing-snapshot-DRAFT.js';
 
 export async function mountInventoryPersistentAdminPanel(root, client) {
   if (!root || typeof root.replaceChildren !== 'function') throw new TypeError('DOM root required');
@@ -20,10 +21,17 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const table = el('table');
   const header = el('thead');
   const tr = el('tr');
-  for (const heading of ['Item','Unit','Active']) tr.append(el('th',heading));
+  for (const heading of ['Item','Unit','Stock','Stock value','WAC / base unit','Active']) tr.append(el('th',heading));
   header.append(tr);
   const body = el('tbody');
   table.append(header,body);
+  const costingTitle=el('h3','Recipe costing overview');
+  const costingTable=el('table');
+  const costingHeader=el('thead');
+  const costingHeadRow=el('tr');
+  for(const heading of ['Product','Price','Recipe cost','Profit','Margin %','Approval'])costingHeadRow.append(el('th',heading));
+  costingHeader.append(costingHeadRow);
+  const costingBody=el('tbody');costingTable.append(costingHeader,costingBody);
   const stockTitle=el('h3','Receive stock');
   const stockItem=el('select');
   const qty=el('input');qty.type='number';qty.min='0.0001';qty.step='any';qty.placeholder='Purchase quantity';
@@ -53,7 +61,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const approveButton = el('button','Approve recipe');
   reviewButton.type='button';approveButton.type='button';
   const priceNote=el('p','Change and save selling prices in Menu Management before review.');
-  root.replaceChildren(title,status,refreshButton,table,stockTitle,stockItem,qty,totalCost,reference,receiveButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,reviewButton,approveButton);
+  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,stockTitle,stockItem,qty,totalCost,reference,receiveButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,reviewButton,approveButton);
   let products=[];
   async function loadProducts() {
     const { data,error }=await client.from('products').select('id,name,price');
@@ -66,25 +74,48 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       productSelect.append(option);
     }
   }
+  const formatNumber=value=>Number.isFinite(value)?value.toFixed(4):'—';
+  function renderCosting(snapshot){
+    const projection=calculateInventoryCosting(snapshot,products);
+    const balances=new Map(projection.balances.map(balance=>[balance.itemId,balance]));
+    body.replaceChildren();
+    stockItem.replaceChildren();ingredientItem.replaceChildren();
+    for(const item of snapshot.items){
+      if(item.is_active){
+        for(const select of [stockItem,ingredientItem]){
+          const option=el('option',item.name+' ('+item.base_unit+')');
+          option.value=item.id;select.append(option);
+        }
+      }
+      const balance=balances.get(item.id);
+      const row=el('tr');
+      for(const value of [item.name??'',item.base_unit??'',formatNumber(balance?.quantity??0),
+        formatNumber(balance?.value??0),formatNumber(balance?.wac??0),item.is_active?'Yes':'No']){
+        row.append(el('td',String(value)));
+      }
+      body.append(row);
+    }
+    costingBody.replaceChildren();
+    for(const recipe of projection.recipes){
+      const row=el('tr');
+      for(const value of [recipe.productName,recipe.price==null?'—':formatNumber(recipe.price),
+        formatNumber(recipe.cost),recipe.profit==null?'—':formatNumber(recipe.profit),
+        recipe.margin==null?'—':recipe.margin.toFixed(2),
+        recipe.approved?'Approved':'Not approved / stale']){
+        row.append(el('td',String(value)));
+      }
+      costingBody.append(row);
+    }
+    return projection;
+  }
   async function refresh() {
     refreshButton.disabled=true;
     try {
       const snapshot=await controller.refresh();
       if(!snapshot)return;
-      body.replaceChildren();
-      stockItem.replaceChildren();ingredientItem.replaceChildren();
-      for(const item of snapshot.items) {
-        if(item.is_active){
-          for(const select of [stockItem,ingredientItem]){
-            const option=el('option',item.name+' ('+item.base_unit+')');option.value=item.id;select.append(option);
-          }
-        }
-        const row=el('tr');
-        for(const value of [item.name??'',item.base_unit??'',item.is_active?'Yes':'No'])row.append(el('td',String(value)));
-        body.append(row);
-      }
       await loadProducts();
-      status.textContent='Loaded '+snapshot.items.length+' inventory items from Supabase';
+      const projection=renderCosting(snapshot);
+      status.textContent='Loaded '+snapshot.items.length+' inventory items and '+projection.recipes.length+' recipes from Supabase';
     } catch(error) {
       status.textContent='Refresh failed: '+error.message;
       throw error;
@@ -96,12 +127,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     try {
       const outcome=await controller[method](productSelect.value);
       status.textContent=(method==='approveRecipe'?'Recipe approved':'Saved menu price reviewed')+' in database';
-      body.replaceChildren();
-      for(const item of outcome.snapshot.items) {
-        const row=el('tr');
-        for(const value of [item.name??'',item.base_unit??'',item.is_active?'Yes':'No'])row.append(el('td',String(value)));
-        body.append(row);
-      }
+      renderCosting(outcome.snapshot);
     }catch(error){status.textContent='Save failed: '+error.message;}
     finally{reviewButton.disabled=false;approveButton.disabled=false;}
   }
@@ -117,6 +143,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     button.disabled=true;
     try{
       const {snapshot}=await controller[method](payload);
+      renderCosting(snapshot);
       status.textContent='Saved successfully to database. '+snapshot.items.length+' items refreshed.';
       if(method==='saveRecipe'){lines=[];renderLines();}
       if(method==='receive'){pendingReceipt=null;qty.value='';totalCost.value='';reference.value='';}
