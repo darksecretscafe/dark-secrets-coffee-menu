@@ -9,4 +9,9 @@ assert.match(source,/pendingReceipt\.fingerprint!==fingerprint/,'Prevent ambiguo
 assert.match(source,/pendingReceipt=null;qty\.value/,'Clear retry key only after confirmed success');
 assert.match(source,/controller\[method\]\(payload\)/,'Writes go through persistence controller');
 assert.match(source,/controller\.current\(\)\?\.items/,'Ingredients originate from loaded snapshot');
+assert.match(source,/calculateInventoryCosting\(snapshot,products\)/,'Render uses persisted ledger costing');
+assert.match(source,/renderCosting\(outcome\.snapshot\)/,'Approval refreshes costing view');
+assert.match(source,/renderCosting\(snapshot\)/,'Stock and recipe saves refresh costing view');
+assert.match(source,/WAC \/ base unit/,'Show WAC');
+assert.match(source,/Recipe costing overview/,'Show recipe costing overview');
 console.log('PASS: draft UI purchase-unit mapping and receipt retry guard');
