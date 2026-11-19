@@ -1,0 +1,53 @@
+name: Inventory SQL 017 disposable PostgreSQL validation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - 'inventory/sql/017_phase2_recipe_lock_rebuilt_REVIEW_ONLY_DO_NOT_RUN.sql'
+      - 'inventory/tests/postgres_017_*_LOCAL_ONLY.sql'
+      - 'inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh'
+      - '.github/workflows/inventory-disposable-postgres-017.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-disposable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: local-ci-only-password
+          POSTGRES_DB: dsc_inventory_disposable_017
+        ports:
+          - 127.0.0.1:5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d dsc_inventory_disposable_017"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Execute isolated SQL 017 acceptance tests
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: local-ci-only-password
+          PGDATABASE: dsc_inventory_disposable_017
+          DSC_DISPOSABLE_DB_CONFIRM: YES_DESTROY_DISPOSABLE_017
+        run: bash inventory/tests/run_postgres_017_LOCAL_ONLY_v6.sh
+
+# This job runs ONLY against an ephemeral GitHub Actions PostgreSQL service.
+# No Supabase secrets, production connections, migrations, or deployment.
+# Passing these tests does NOT establish Supabase auth/RLS parity or release approval.
