@@ -37,6 +37,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const draftLines=el('ul');
   const saveRecipeButton=el('button','Save recipe draft');saveRecipeButton.type='button';
   let lines=[];
+  let pendingReceipt=null;
   const renderLines=()=>{
     draftLines.replaceChildren();
     for(const [index,line] of lines.entries()){
@@ -118,7 +119,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       const {snapshot}=await controller[method](payload);
       status.textContent='Saved successfully to database. '+snapshot.items.length+' items refreshed.';
       if(method==='saveRecipe'){lines=[];renderLines();}
-      if(method==='receive'){qty.value='';totalCost.value='';reference.value='';}
+      if(method==='receive'){pendingReceipt=null;qty.value='';totalCost.value='';reference.value='';}
     }catch(error){status.textContent='Save failed: '+error.message;}
     finally{button.disabled=false;}
   }
@@ -132,10 +133,19 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     if(!item||!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(cost)||cost<0||!reference.value.trim()){
       status.textContent='Enter valid quantity, cost, and reference';return;
     }
-    // Generate only once per submitted receipt; do not silently retry on failure.
-    const requestKey=globalThis.crypto?.randomUUID?.();
-    if(!requestKey){status.textContent='Secure request ID unavailable';return;}
-    saveAction('receive',{itemId:item.id,quantity,unit:item.purchase_unit,totalCost:cost,reference:reference.value.trim(),requestKey},receiveButton);
+    const receipt={itemId:item.id,quantity,unit:item.preferred_purchase_unit,totalCost:cost,reference:reference.value.trim()};
+    if(!receipt.unit){status.textContent='Item purchase unit missing';return;}
+    const fingerprint=JSON.stringify(receipt);
+    if(pendingReceipt && pendingReceipt.fingerprint!==fingerprint){
+      status.textContent='Previous receipt outcome is uncertain. Restore the previous values to retry, or refresh and reconcile stock before submitting a different receipt.';
+      return;
+    }
+    if(!pendingReceipt){
+      const requestKey=globalThis.crypto?.randomUUID?.();
+      if(!requestKey){status.textContent='Secure request ID unavailable';return;}
+      pendingReceipt={fingerprint,requestKey};
+    }
+    saveAction('receive',{...receipt,requestKey:pendingReceipt.requestKey},receiveButton);
   });
   refreshButton.addEventListener('click',()=>{refresh().catch(()=>{});});
   reviewButton.addEventListener('click',()=>{mutate('reviewRecipePrice');});
