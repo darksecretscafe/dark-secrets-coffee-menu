@@ -17,6 +17,8 @@ on:
       - 'inventory/inventory-admin-session-gateway-DRAFT.js'
       - 'inventory/inventory-persistence-controller-DRAFT.js'
       - 'inventory/inventory-persistent-admin-panel-DRAFT.js'
+      - 'inventory/inventory-costing-snapshot-DRAFT.js'
+      - 'inventory/tests/inventory-costing-snapshot.test.mjs'
       - 'inventory/tests/inventory-persistent-admin-panel-contract.test.mjs'
       - 'inventory/tests/inventory-persistence-controller.test.mjs'
       - 'inventory/tests/inventory-admin-session-gateway.test.mjs'
@@ -59,6 +61,8 @@ jobs:
         run: node --check inventory/inventory-persistent-admin-panel-DRAFT.js
       - name: Test draft persistent admin panel contract
         run: node inventory/tests/inventory-persistent-admin-panel-contract.test.mjs
+      - name: Test WAC and recipe costing projection
+        run: node inventory/tests/inventory-costing-snapshot.test.mjs
       - name: Test persisted inventory controller
         run: node inventory/tests/inventory-persistence-controller.test.mjs
       - name: Test menu-to-inventory relay contract
