@@ -9,6 +9,8 @@ on:
       - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
       - 'inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs'
       - 'inventory/tests/menu-inventory-relay-offline.test.mjs'
+      - 'inventory/tests/inventory-v16-offline-release-gate.test.mjs'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
       - 'inventory/menu-products-snapshot-contract-v3-DRAFT.js'
       - 'inventory/admin-menu-inventory-relay-v1-DRAFT.js'
       - '.github/workflows/inventory-offline-contract-tests.yml'
@@ -38,6 +40,8 @@ jobs:
         run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
       - name: Test menu-to-inventory relay contract
         run: node inventory/tests/menu-inventory-relay-offline.test.mjs
+      - name: Check approved v16 offline workflow invariants
+        run: node inventory/tests/inventory-v16-offline-release-gate.test.mjs
 
 # This workflow uses no Supabase credentials, SQL migrations, deployments,
 # service-role keys, production URLs, or database connections.
