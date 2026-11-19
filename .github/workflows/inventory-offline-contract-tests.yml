@@ -16,6 +16,7 @@ on:
       - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
       - 'inventory/inventory-admin-session-gateway-DRAFT.js'
       - 'inventory/inventory-persistence-controller-DRAFT.js'
+      - 'inventory/inventory-persistent-admin-panel-DRAFT.js'
       - 'inventory/tests/inventory-persistence-controller.test.mjs'
       - 'inventory/tests/inventory-admin-session-gateway.test.mjs'
       - 'inventory/inventory-readonly-provider-v1-DRAFT.js'
@@ -53,6 +54,8 @@ jobs:
         run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
       - name: Test admin session authorization gate
         run: node inventory/tests/inventory-admin-session-gateway.test.mjs
+      - name: Syntax-check draft persistent admin panel
+        run: node --check inventory/inventory-persistent-admin-panel-DRAFT.js
       - name: Test persisted inventory controller
         run: node inventory/tests/inventory-persistence-controller.test.mjs
       - name: Test menu-to-inventory relay contract
