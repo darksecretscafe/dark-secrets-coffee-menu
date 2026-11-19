@@ -7,6 +7,8 @@ on:
       - feature/inventory-phase1-foundation
     paths:
       - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
+      - 'inventory/inventory-readonly-provider-v1-DRAFT.js'
+      - 'inventory/tests/inventory-readonly-provider-v1.test.mjs'
       - 'inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs'
       - 'inventory/tests/menu-inventory-relay-offline.test.mjs'
       - 'inventory/tests/inventory-v16-offline-release-gate.test.mjs'
@@ -40,6 +42,8 @@ jobs:
         run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
       - name: Test menu-to-inventory relay contract
         run: node inventory/tests/menu-inventory-relay-offline.test.mjs
+      - name: Test read-only inventory snapshot provider
+        run: node inventory/tests/inventory-readonly-provider-v1.test.mjs
       - name: Check approved v16 offline workflow invariants
         run: node inventory/tests/inventory-v16-offline-release-gate.test.mjs
 
