@@ -65,6 +65,8 @@ export function createInventoryDraftApi(client) {
       p_reason: correction.reason,
       p_request_key: requireRequestKey(correction.requestKey)
     }),
+    reviewRecipePrice: (productId) => rpc('inventory_review_recipe_price_draft', { p_product_id: productId }),
+    approveRecipe: (productId) => rpc('inventory_approve_recipe_draft', { p_product_id: productId }),
     saveRecipe: (recipe) => rpc('inventory_save_recipe_draft', {
       p_product_id: recipe.productId,
       p_lines: recipe.lines.map(line => ({
