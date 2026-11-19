@@ -30,7 +30,7 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Run offline browser smoke test
-        run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs --project=chromium
+        run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs
         env:
           CI: 'true'
       - name: Upload failure evidence
