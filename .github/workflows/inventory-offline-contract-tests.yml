@@ -1,0 +1,38 @@
+name: Inventory offline contract tests (DRAFT only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
+      - 'inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs'
+      - '.github/workflows/inventory-offline-contract-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    name: Verify offline adapter contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check adapter
+        run: node --check inventory/inventory-rpc-adapter-v2-DRAFT.js
+      - name: Syntax-check offline tests
+        run: node --check inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
+      - name: Run offline mock contract tests
+        run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
+
+# This workflow uses no Supabase credentials, SQL migrations, deployments,
+# service-role keys, production URLs, or database connections.
