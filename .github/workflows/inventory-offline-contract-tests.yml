@@ -14,6 +14,8 @@ on:
       - feature/inventory-phase1-foundation
     paths:
       - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
+      - 'inventory/inventory-admin-session-gateway-DRAFT.js'
+      - 'inventory/tests/inventory-admin-session-gateway.test.mjs'
       - 'inventory/inventory-readonly-provider-v1-DRAFT.js'
       - 'inventory/tests/inventory-readonly-provider-v1.test.mjs'
       - 'inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs'
@@ -47,6 +49,8 @@ jobs:
         run: node --check inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
       - name: Run offline mock contract tests
         run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
+      - name: Test admin session authorization gate
+        run: node inventory/tests/inventory-admin-session-gateway.test.mjs
       - name: Test menu-to-inventory relay contract
         run: node inventory/tests/menu-inventory-relay-offline.test.mjs
       - name: Test read-only inventory snapshot provider
