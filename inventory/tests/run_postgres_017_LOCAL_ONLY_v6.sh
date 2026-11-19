@@ -37,4 +37,6 @@ psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_role_rls_LOCAL_ONLY.s
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_rpc_behavior_LOCAL_ONLY.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_receiving_wac_replay_LOCAL_ONLY.sql
 psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_017_correction_wastage_LOCAL_ONLY.sql
-printf '%s\n' 'LOCAL SQL 017 smoke test complete; dispose of database after reviewing results.'
+psql -X -v ON_ERROR_STOP=1 -f inventory/sql/018_recipe_review_approval_DRAFT_DO_NOT_RUN.sql
+psql -X -v ON_ERROR_STOP=1 -f inventory/tests/postgres_018_recipe_approval_LOCAL_ONLY.sql
+printf '%s\n' 'LOCAL SQL 017 and 018 smoke test complete; dispose of database after reviewing results.'
