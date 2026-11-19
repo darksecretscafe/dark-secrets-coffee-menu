@@ -29,6 +29,22 @@ slow.invalidate();
 resolveOld([{ id: 'stale' }]);
 assert.equal(await pending, null, 'Invalidated request must not repopulate snapshot');
 assert.equal(slow.current(), null);
+
+// When two refreshes overlap, only the newest response may be committed.
+let resolveFirst;
+let invocation = 0;
+const racing = createInventoryReadOnlyProvider({
+  ...api,
+  listItems: () => (++invocation === 1
+    ? new Promise(resolve => { resolveFirst = resolve; })
+    : Promise.resolve([{ id: 'newest' }]))
+});
+const oldRefresh = racing.refresh();
+const newestSnapshot = await racing.refresh();
+assert.equal(newestSnapshot.items[0].id, 'newest');
+resolveFirst([{ id: 'outdated' }]);
+assert.equal(await oldRefresh, null);
+assert.equal(racing.current().items[0].id, 'newest', 'Late response must not overwrite newest snapshot');
 const broken = createInventoryReadOnlyProvider({ ...api, listRecipes: async () => ({ bad: true }) });
 await assert.rejects(() => broken.refresh(), TypeError);
 assert.equal(broken.current(), null, 'Invalid data must never be committed');
