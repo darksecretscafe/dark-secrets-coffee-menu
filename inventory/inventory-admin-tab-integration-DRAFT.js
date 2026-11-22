@@ -45,7 +45,11 @@ async function loadInventory() {
     if (!data?.user) throw new Error('Sign in as an admin to access inventory.');
     await mountApprovedV16Inventory(root, client);
     // A sign-out may happen while the async mount is fetching records.
-    if (requestedGeneration !== generation) return;
+    // The pending mount must not restore inventory DOM after resetInventory.
+    if (requestedGeneration !== generation) {
+      root.replaceChildren();
+      return;
+    }
     const { data: afterMount, error: afterError } = await client.auth.getUser();
     if (afterError || !afterMount?.user || afterMount.user.id !== data.user.id) {
       resetInventory();
