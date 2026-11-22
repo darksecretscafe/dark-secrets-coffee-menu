@@ -8,7 +8,7 @@ Status: PREPARATION ONLY. No production SQL has been executed by this runbook.
 - No paid backup or separate Supabase project is assumed.
 - Latest SQL 017 and 018 disposable PostgreSQL, browser and offline contract workflows must be green.
 - Record the existing Supabase project ID, timestamp, and the SQL Editor execution account (do not place secrets in GitHub).
-- Verify a **usable** database recovery option before applying a committed migration. A SQL transaction only rolls back uncommitted work; a later DROP script is not a data backup.
+- OWNER ACCEPTED NO-RESTORABLE-BACKUP RISK on 2026-11-22 and explicitly authorized proceeding with additive-only inventory migration in the existing LIVE project. No paid backup required. A SQL transaction only rolls back uncommitted work; a later DROP script is not a data backup.
 
 ## Confirmed LIVE metadata from owner (2026-11-22)
 - public.products: id uuid, name text, price numeric, is_active boolean, category_id bigint.
@@ -19,7 +19,7 @@ Status: PREPARATION ONLY. No production SQL has been executed by this runbook.
 - These checks do **not** prove end-user JWT/RLS behavior or production recoverability.
 
 ## Release sequence (do not skip gates)
-1. Confirm a usable free recovery path in the actual Supabase project; if unavailable, **STOP** and ask owner to accept the explicit risk. Do not misrepresent a schema cleanup as full backup.
+1. Owner explicitly accepted proceeding without a restorable backup (2026-11-22). Record this waiver and the migration timestamp. No paid backup or additional backup approval is required; do not misrepresent a schema cleanup as full backup.
 2. Review SQL 017/018 for ownership, grants, RLS, product references and conflicts against current LIVE metadata. Do not paste unreviewed SQL.
 3. Execute migration only with owner approval, record exact timestamp and SQL output. SQL 017 creates inventory schema and SQL 018 adds review/approval persistence.
 4. Immediately verify catalog objects, authenticated admin read/RPC access, non-admin denial, and that automatic_inventory_enabled=false.
@@ -30,6 +30,6 @@ Status: PREPARATION ONLY. No production SQL has been executed by this runbook.
 
 ## Explicit unresolved blockers
 - No direct Supabase connector/credentials available to the assistant, so it cannot perform or witness LIVE SQL execution.
-- No verified database backup/recovery path yet.
+- No restorable database backup; owner explicitly accepted the residual production risk.
 - Real authenticated and non-admin JWT/RLS tests are pending.
 - Admin panel is still isolated from the LIVE entrypoint.
