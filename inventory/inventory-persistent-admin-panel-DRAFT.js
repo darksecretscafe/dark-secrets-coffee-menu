@@ -32,6 +32,24 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   for(const heading of ['Product','Price','Recipe cost','Profit','Margin %','Approval'])costingHeadRow.append(el('th',heading));
   costingHeader.append(costingHeadRow);
   const costingBody=el('tbody');costingTable.append(costingHeader,costingBody);
+  const itemTitle=el('h3','Create inventory item');
+  const itemCode=el('input');itemCode.placeholder='Unique item code';
+  const itemName=el('input');itemName.placeholder='Item name';
+  const itemCategory=el('input');itemCategory.placeholder='Category';
+  const itemType=el('select');
+  for(const type of ['ingredient','packaging']){const option=el('option',type);option.value=type;itemType.append(option);}
+  const itemBaseUnit=el('select');
+  for(const unit of ['g','ml','pcs']){const option=el('option',unit);option.value=unit;itemBaseUnit.append(option);}
+  const itemPurchaseUnit=el('select');
+  const updatePurchaseUnits=()=>{
+    const allowed={g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[itemBaseUnit.value]??[];
+    itemPurchaseUnit.replaceChildren();
+    for(const unit of allowed){const option=el('option',unit);option.value=unit;itemPurchaseUnit.append(option);}
+  };
+  itemBaseUnit.addEventListener('change',updatePurchaseUnits);updatePurchaseUnits();
+  const itemMinimumStock=el('input');itemMinimumStock.type='number';itemMinimumStock.min='0';itemMinimumStock.step='0.0001';itemMinimumStock.value='0';
+  const itemSupplier=el('input');itemSupplier.placeholder='Supplier (optional)';
+  const createItemButton=el('button','Create inventory item');createItemButton.type='button';
   const stockTitle=el('h3','Receive stock');
   const stockItem=el('select');
   const qty=el('input');qty.type='number';qty.min='0.0001';qty.step='any';qty.placeholder='Purchase quantity';
@@ -76,7 +94,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const priceConfirmationLabel=el('label','I checked the saved menu price and recipe costing for this product');
   priceConfirmationLabel.prepend(priceConfirmation);
   const priceDetails=el('p','Select a product to inspect its saved price and costing.');
-  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,stockTitle,stockItem,qty,totalCost,reference,receiveButton,correctionTitle,correctionItem,correctionType,correctionQuantity,correctionValue,correctionReason,correctionButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,priceDetails,priceConfirmationLabel,reviewButton,approveButton);
+  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,itemTitle,itemCode,itemName,itemCategory,itemType,itemBaseUnit,itemPurchaseUnit,itemMinimumStock,itemSupplier,createItemButton,stockTitle,stockItem,qty,totalCost,reference,receiveButton,correctionTitle,correctionItem,correctionType,correctionQuantity,correctionValue,correctionReason,correctionButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,priceDetails,priceConfirmationLabel,reviewButton,approveButton);
   let products=[];
   async function loadProducts() {
     const { data,error }=await client.from('products').select('id,name,price');
@@ -209,6 +227,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       priceConfirmation.checked=false;
       status.textContent='Saved successfully to database. '+snapshot.items.length+' items refreshed.';
       if(method==='saveRecipe'){recipeDirty=false;loadSavedRecipe(productSelect.value,true);}
+      if(method==='saveItem'){itemCode.value='';itemName.value='';itemCategory.value='';itemSupplier.value='';itemMinimumStock.value='0';}
       if(method==='receive'){pendingReceipt=null;qty.value='';totalCost.value='';reference.value='';}
       if(method==='correct'){pendingCorrection=null;correctionQuantity.value='';correctionValue.value='';correctionReason.value='';}
     }catch(error){status.textContent='Save failed: '+error.message;}
@@ -237,6 +256,19 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       pendingReceipt={fingerprint,requestKey};
     }
     saveAction('receive',{...receipt,requestKey:pendingReceipt.requestKey},receiveButton);
+  });
+  createItemButton.addEventListener('click',()=>{
+    const code=itemCode.value.trim(),name=itemName.value.trim(),category=itemCategory.value.trim();
+    const minimumStock=Number(itemMinimumStock.value);
+    if(!code||code.length>50||!name||name.length>150||!category||category.length>80||
+       !itemMinimumStock.value.trim()||!Number.isFinite(minimumStock)||minimumStock<0||
+       minimumStock>999999999999.9999||Math.round(minimumStock*10000)!==minimumStock*10000||
+       itemSupplier.value.length>150){
+      status.textContent='Enter valid item code, name, category, minimum stock, and supplier';return;
+    }
+    saveAction('saveItem',{id:null,code,name,category,type:itemType.value,
+      baseUnit:itemBaseUnit.value,purchaseUnit:itemPurchaseUnit.value,
+      minimumStock,active:true,supplier:itemSupplier.value.trim()||null},createItemButton);
   });
   correctionButton.addEventListener('click',()=>{
     const item=controller.current()?.items.find(x=>x.id===correctionItem.value);
