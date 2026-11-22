@@ -55,7 +55,7 @@ export async function mountApprovedV16Inventory(root, client) {
     const select = stockForm.elements.namedItem('purchaseUnit');
     select.replaceChildren(...units.map(u => option(u,u)));
   };
-  stockForm.elements.unit.addEventListener('change', updateUnits);
+  stockForm.elements.namedItem('unit').addEventListener('change', updateUnits);
   updateUnits();
   const syncReceiveUnit = () => {
     const item = findItem($('receiveItem').value);
@@ -155,7 +155,9 @@ export async function mountApprovedV16Inventory(root, client) {
     if (active.some(i=>i.id===previous)) $('receiveItem').value=previous;
     if (active.some(i=>i.id===previousIngredient)) $('recipeItem').value=previousIngredient;
     syncReceiveUnit();
-    const receipts = snapshot.movements.filter(m=>m.movement_type==='receive').slice().reverse().slice(0,20);
+    const receipts = snapshot.movements.filter(m=>m.movement_type==='receive')
+      .slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')) ||
+        String(b.id).localeCompare(String(a.id))).slice(0,20);
     $('activity').textContent = receipts.length ? receipts.length+' recent receiving transaction(s)' : 'No transactions yet.';
     $('costHistoryRows').replaceChildren();
     for (const m of receipts) {
