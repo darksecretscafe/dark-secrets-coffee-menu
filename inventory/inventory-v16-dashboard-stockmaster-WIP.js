@@ -206,13 +206,13 @@ export async function mountInventoryV16Dashboard(root, client) {
     syncReceiveUnits();
     const itemById = new Map(snapshot.items.map(i => [i.id, i]));
     historyBody.replaceChildren();
-    const receipts = snapshot.movements.filter(m => m.movement_type === 'receiving' || m.movement_type === 'receipt');
+    const receipts = snapshot.movements.filter(m => m.movement_type === 'receive');
     receipts.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)));
     for (const movement of receipts.slice(0, 50)) {
       const row = el('tr');
-      const beforeQty = Number(movement.quantity_before);
+      const beforeQty = Number(movement.quantity_after) - Number(movement.quantity_delta);
       const afterQty = Number(movement.quantity_after);
-      const beforeValue = Number(movement.value_before);
+      const beforeValue = Number(movement.value_after) - Number(movement.value_delta);
       const afterValue = Number(movement.value_after);
       const beforeWac = beforeQty > 0 ? beforeValue / beforeQty : 0;
       const afterWac = afterQty > 0 ? afterValue / afterQty : 0;
