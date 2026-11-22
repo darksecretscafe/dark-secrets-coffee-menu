@@ -27,4 +27,6 @@ assert.match(source,/loadedRecipeProductId!==productSelect\.value/,'Do not save 
 assert.match(source,/method==='reviewRecipePrice'&&!priceConfirmation\.checked/,'Review requires explicit price confirmation');
 assert.match(source,/if\(recipeDirty\)\{status\.textContent='Save or discard unsaved recipe edits before review or approval'/,'Unsaved edits block review and approval');
 assert.match(source,/priceConfirmation\.checked=false/,'Price confirmation resets');
+assert.match(source,/productSelect\.addEventListener\('change',[\s\S]*?if\(snapshot\)renderCosting\(snapshot\)/,'Price and margin refresh when product selection changes');
+assert.match(source,/recipeDirty=true;\s*priceConfirmation\.checked=false/,'Recipe edits invalidate price confirmation');
 console.log('PASS: draft UI purchase-unit mapping and receipt retry guard');
