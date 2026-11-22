@@ -25,6 +25,7 @@ on:
       - 'inventory/inventory-readonly-provider-v1-DRAFT.js'
       - 'inventory/tests/inventory-readonly-provider-v1.test.mjs'
       - 'inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs'
+      - 'inventory/tests/inventory-rpc-pagination.test.mjs'
       - 'inventory/tests/menu-inventory-relay-offline.test.mjs'
       - 'inventory/tests/inventory-v16-offline-release-gate.test.mjs'
       - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
@@ -55,6 +56,8 @@ jobs:
         run: node --check inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
       - name: Run offline mock contract tests
         run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
+      - name: Test paginated inventory reads
+        run: node inventory/tests/inventory-rpc-pagination.test.mjs
       - name: Test admin session authorization gate
         run: node inventory/tests/inventory-admin-session-gateway.test.mjs
       - name: Syntax-check draft persistent admin panel
