@@ -14,9 +14,9 @@ test('v16 layout uses scoped approved styles, not global admin styles', () => {
 test('v16 inventory actions use persisted authenticated controller', () => {
   assert.match(source, /createInventoryAdminSessionGateway\(client\)/);
   assert.match(source, /createInventoryPersistenceController\(session\)/);
-  assert.match(source, /controller\\.saveItem\\(/);
-  assert.match(source, /controller\\.receive\\(/);
-  assert.match(source, /controller\\[method\\]\\(payload\\)/);
+  assert.match(source, /controller\.saveItem\(/);
+  assert.match(source, /controller\.receive\(/);
+  assert.match(source, /controller\[method\]\(payload\)/);
   for (const action of ['saveRecipe', 'reviewRecipePrice', 'approveRecipe']) {
     assert.ok(source.includes("recipeMutation('" + action + "'"), action + ' dispatch is wired');
   }
