@@ -11,7 +11,7 @@ assert.match(html, /type="module" src="inventory\/inventory-admin-tab-integratio
 assert.match(admin, /window\.DS_adminDb = db/);
 assert.match(integration, /window\.DS_adminDb/);
 assert.match(integration, /client\.auth\.getUser\(\)/);
-assert.match(integration, /mountInventoryPersistentAdminPanel\(root, client\)/);
+assert.match(integration, /mountApprovedV16Inventory\(root, client\)/);
 assert.match(integration, /event === 'SIGNED_OUT'/);
 assert.match(integration, /requestedGeneration !== generation/);
 assert.doesNotMatch(integration, /createClient\s*\(/);
