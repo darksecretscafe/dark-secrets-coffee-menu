@@ -24,4 +24,7 @@ assert.match(source,/if\(recipeDirty&&!force\)/,'Protect unsaved edits when swit
 assert.match(source,/Discard unsaved recipe edits/,'Explicit discard option');
 assert.match(source,/if\(!recipeDirty\)loadSavedRecipe/,'Refresh does not overwrite unsaved edits');
 assert.match(source,/loadedRecipeProductId!==productSelect\.value/,'Do not save recipe lines for a different product');
+assert.match(source,/method==='reviewRecipePrice'&&!priceConfirmation\.checked/,'Review requires explicit price confirmation');
+assert.match(source,/if\(recipeDirty\)\{status\.textContent='Save or discard unsaved recipe edits before review or approval'/,'Unsaved edits block review and approval');
+assert.match(source,/priceConfirmation\.checked=false/,'Price confirmation resets');
 console.log('PASS: draft UI purchase-unit mapping and receipt retry guard');
