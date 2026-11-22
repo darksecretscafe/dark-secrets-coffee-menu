@@ -18,6 +18,10 @@ on:
       - 'inventory/tests/inventory-readonly-preview-browser.test.mjs'
       - 'inventory/tests/inventory-persistent-admin-panel-browser.test.mjs'
       - 'inventory/inventory-persistent-admin-panel-DRAFT.js'
+      - 'inventory/inventory-v16-approved-live-controller.js'
+      - 'inventory/inventory-v16-approved-live-template.html'
+      - 'inventory/inventory-v16-approved-style-WIP.css'
+      - 'inventory/tests/inventory-v16-approved-browser.test.mjs'
       - '.github/workflows/inventory-offline-browser-smoke.yml'
 
 permissions:
@@ -39,7 +43,7 @@ jobs:
       - name: Install isolated browser test dependency
         run: npm install --no-save --no-package-lock @playwright/test@1.56.1
       - name: Run offline browser smoke test
-        run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs inventory/tests/inventory-persistent-admin-panel-browser.test.mjs
+        run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs inventory/tests/inventory-persistent-admin-panel-browser.test.mjs inventory/tests/inventory-v16-approved-browser.test.mjs
         env:
           CI: 'true'
       - name: Upload failure evidence
