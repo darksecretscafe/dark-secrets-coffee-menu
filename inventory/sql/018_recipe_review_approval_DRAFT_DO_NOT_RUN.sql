@@ -35,7 +35,7 @@ create trigger inventory_recipe_invalidate_review_draft
 before update of is_configured, target_margin_percent, updated_at on public.inventory_recipes
 for each row execute function public.inventory_recipe_invalidate_review_draft();
 
--- Price review must follow a successfully saved menu price.
+-- Lock the product row during price review and approval so a concurrent\n-- Menu Management price update cannot slip between verification and approval.\n-- Price edits after commit still make approved_price stale on read.\n-- Price review must follow a successfully saved menu price.
 -- Do not write to public.products here: Menu Management remains price owner.
 create function public.inventory_review_recipe_price_draft(p_product_id uuid)
 returns uuid language plpgsql security definer set search_path = '' as $$
@@ -53,7 +53,7 @@ begin
   if not exists (select 1 from public.inventory_recipe_lines where recipe_id=v_recipe.id) then
     raise exception 'Recipe must contain ingredients';
   end if;
-  select price into v_price from public.products where id=p_product_id;
+  select price into v_price from public.products where id=p_product_id for share;
   if v_price is null or v_price <= 0 then raise exception 'Saved selling price must be positive'; end if;
   update public.inventory_recipes set
     price_review_revision=recipe_revision,
@@ -82,7 +82,7 @@ begin
   if not exists (select 1 from public.inventory_recipe_lines where recipe_id=v_recipe.id) then
     raise exception 'Recipe must contain ingredients';
   end if;
-  select price into v_price from public.products where id=p_product_id;
+  select price into v_price from public.products where id=p_product_id for share;
   if v_price is null or v_price <= 0
      or v_recipe.price_review_revision is distinct from v_recipe.recipe_revision
      or v_recipe.reviewed_price is distinct from v_price then
