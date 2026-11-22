@@ -13,6 +13,9 @@ on:
     branches:
       - feature/inventory-phase1-foundation
     paths:
+      - 'admin.html'
+      - 'inventory/inventory-admin-tab-integration-DRAFT.js'
+      - 'inventory/tests/inventory-admin-tab-integration.test.mjs'
       - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
       - 'inventory/inventory-admin-session-gateway-DRAFT.js'
       - 'inventory/inventory-persistence-controller-DRAFT.js'
@@ -58,6 +61,8 @@ jobs:
         run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
       - name: Test paginated inventory reads
         run: node inventory/tests/inventory-rpc-pagination.test.mjs
+      - name: Test admin inventory tab integration
+        run: node inventory/tests/inventory-admin-tab-integration.test.mjs
       - name: Test admin session authorization gate
         run: node inventory/tests/inventory-admin-session-gateway.test.mjs
       - name: Syntax-check draft persistent admin panel
