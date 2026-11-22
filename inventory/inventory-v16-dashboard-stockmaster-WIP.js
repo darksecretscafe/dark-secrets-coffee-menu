@@ -25,8 +25,9 @@ export async function mountInventoryV16Dashboard(root, client) {
   tabs.setAttribute('aria-label', 'Inventory sections');
   const homeButton = el('button', 'Dashboard');
   const stockButton = el('button', 'Stock Master');
-  for (const b of [homeButton, stockButton]) b.type = 'button';
-  tabs.append(homeButton, stockButton);
+  const receiveButton = el('button', 'Receive Stock');
+  for (const b of [homeButton, stockButton, receiveButton]) b.type = 'button';
+  tabs.append(homeButton, stockButton, receiveButton);
   const status = el('p', 'Loading inventory…', 'status');
   status.setAttribute('role', 'status');
   const home = el('section');
@@ -96,17 +97,58 @@ export async function mountInventoryV16Dashboard(root, client) {
   scroll.append(table);
   listCard.append(scroll);
   stock.append(formCard, listCard);
-  shell.append(heading, tabs, home, stock, status);
+  const receive = el('section');
+  receive.hidden = true;
+  const receiveCard = el('div', '', 'card');
+  receiveCard.append(el('h2', 'Receive Stock'));
+  const receiveForm = el('form');
+  receiveForm.className = 'grid';
+  const receiveField = (labelText, input) => {
+    const label = el('label', labelText);
+    label.append(input);
+    receiveForm.append(label);
+    return input;
+  };
+  const receiveItem = receiveField('Existing stock item', el('select'));
+  receiveItem.required = true;
+  const receiveQty = receiveField('Purchase quantity', el('input'));
+  receiveQty.type = 'number'; receiveQty.min = '0.0001'; receiveQty.step = 'any'; receiveQty.required = true;
+  const receiveUnit = receiveField('Purchase unit', el('select'));
+  const receiveCost = receiveField('Total purchase cost (₱)', el('input'));
+  receiveCost.type = 'number'; receiveCost.min = '0'; receiveCost.step = 'any'; receiveCost.required = true;
+  const receiveReference = receiveField('Supplier reference', el('input'));
+  receiveReference.required = true; receiveReference.maxLength = 80;
+  const receiveSave = el('button', 'Record receiving');
+  receiveSave.type = 'submit';
+  receiveForm.append(receiveSave);
+  receiveCard.append(receiveForm);
+  const historyCard = el('div', '', 'card');
+  historyCard.append(el('h2', 'Recent receiving'));
+  const historyScroll = el('div', '', 'scroll');
+  const historyTable = el('table');
+  const historyHead = el('thead');
+  const historyRow = el('tr');
+  for (const title of ['Ingredient','Received','Previous WAC','New WAC','Supplier reference']) historyRow.append(el('th', title));
+  historyHead.append(historyRow);
+  const historyBody = el('tbody');
+  historyTable.append(historyHead, historyBody);
+  historyScroll.append(historyTable);
+  historyCard.append(historyScroll);
+  receive.append(receiveCard, historyCard);
+  shell.append(heading, tabs, home, stock, receive, status);
   root.replaceChildren(shell);
 
   function setSection(name) {
     home.hidden = name !== 'home';
     stock.hidden = name !== 'stock';
+    receive.hidden = name !== 'receive';
     homeButton.setAttribute('aria-selected', String(name === 'home'));
     stockButton.setAttribute('aria-selected', String(name === 'stock'));
+    receiveButton.setAttribute('aria-selected', String(name === 'receive'));
   }
   homeButton.addEventListener('click', () => setSection('home'));
   stockButton.addEventListener('click', () => setSection('stock'));
+  receiveButton.addEventListener('click', () => setSection('receive'));
   openStock.addEventListener('click', () => setSection('stock'));
   function syncUnits() {
     const family = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[unit.value];
@@ -119,7 +161,23 @@ export async function mountInventoryV16Dashboard(root, client) {
   }
   unit.addEventListener('change', syncUnits);
   syncUnits();
+  let pendingReceipt = null;
+  let currentSnapshot = null;
+  function syncReceiveUnits() {
+    const item = currentSnapshot?.items.find(i => i.id === receiveItem.value);
+    receiveUnit.replaceChildren();
+    if (!item) return;
+    const allowed = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[item.base_unit] || [item.preferred_purchase_unit];
+    for (const value of allowed) {
+      const option = el('option', value);
+      option.value = value;
+      receiveUnit.append(option);
+    }
+    receiveUnit.value = item.preferred_purchase_unit;
+  }
+  receiveItem.addEventListener('change', syncReceiveUnits);
   function render(snapshot) {
+    currentSnapshot = snapshot;
     const projection = calculateInventoryCosting(snapshot, []);
     const balances = new Map(projection.balances.map(b => [b.itemId, b]));
     const activeItems = snapshot.items.filter(i => i.is_active);
@@ -136,6 +194,43 @@ export async function mountInventoryV16Dashboard(root, client) {
         String(Number(balance?.wac ?? 0)), item.is_active ? 'Active' : 'Inactive'];
       for (const value of values) row.append(el('td', value));
       tbody.append(row);
+    }
+    const selected = receiveItem.value;
+    receiveItem.replaceChildren();
+    for (const item of snapshot.items.filter(i => i.is_active)) {
+      const option = el('option', item.name);
+      option.value = item.id;
+      receiveItem.append(option);
+    }
+    if (snapshot.items.some(i => i.id === selected && i.is_active)) receiveItem.value = selected;
+    syncReceiveUnits();
+    const itemById = new Map(snapshot.items.map(i => [i.id, i]));
+    historyBody.replaceChildren();
+    const receipts = snapshot.movements.filter(m => m.movement_type === 'receiving' || m.movement_type === 'receipt');
+    receipts.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)));
+    for (const movement of receipts.slice(0, 50)) {
+      const row = el('tr');
+      const beforeQty = Number(movement.quantity_before);
+      const afterQty = Number(movement.quantity_after);
+      const beforeValue = Number(movement.value_before);
+      const afterValue = Number(movement.value_after);
+      const beforeWac = beforeQty > 0 ? beforeValue / beforeQty : 0;
+      const afterWac = afterQty > 0 ? afterValue / afterQty : 0;
+      for (const value of [
+        itemById.get(movement.item_id)?.name || 'Unknown item',
+        String(movement.quantity_delta ?? ''),
+        Number.isFinite(beforeWac) ? beforeWac.toFixed(4) : '—',
+        Number.isFinite(afterWac) ? afterWac.toFixed(4) : '—',
+        String(movement.reference ?? '')
+      ]) row.append(el('td', value));
+      historyBody.append(row);
+    }
+    if (!receipts.length) {
+      const row = el('tr');
+      const cell = el('td', 'No receiving transactions yet.');
+      cell.colSpan = 5;
+      row.append(cell);
+      historyBody.append(row);
     }
     if (!snapshot.items.length) {
       const row = el('tr');
@@ -176,6 +271,43 @@ export async function mountInventoryV16Dashboard(root, client) {
       status.textContent = 'Save failed: ' + (error?.message || 'Unknown error');
     } finally {
       save.disabled = false;
+    }
+  });
+  receiveForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (receiveSave.disabled) return;
+    const item = currentSnapshot?.items.find(i => i.id === receiveItem.value);
+    const quantity = Number(receiveQty.value);
+    const totalCost = Number(receiveCost.value);
+    const reference = receiveReference.value.trim();
+    if (!item || !Number.isFinite(quantity) || quantity <= 0 ||
+        !Number.isFinite(totalCost) || totalCost < 0 || !reference) {
+      status.textContent = 'Enter a valid item, quantity, cost and supplier reference.';
+      return;
+    }
+    const payload = {itemId:item.id, quantity, unit:receiveUnit.value, totalCost, reference};
+    const fingerprint = JSON.stringify(payload);
+    if (pendingReceipt && pendingReceipt.fingerprint !== fingerprint) {
+      status.textContent = 'Previous receiving result is uncertain. Retry the same values before starting a different receipt.';
+      return;
+    }
+    if (!pendingReceipt) {
+      const requestKey = globalThis.crypto?.randomUUID?.();
+      if (!requestKey) { status.textContent = 'Secure transaction ID unavailable.'; return; }
+      pendingReceipt = {fingerprint, requestKey};
+    }
+    receiveSave.disabled = true;
+    status.textContent = 'Saving stock receipt…';
+    try {
+      const outcome = await controller.receive({...payload, requestKey:pendingReceipt.requestKey});
+      render(outcome.snapshot);
+      pendingReceipt = null;
+      receiveQty.value = ''; receiveCost.value = ''; receiveReference.value = '';
+      status.textContent = 'Receiving saved and verified from Supabase.';
+    } catch (error) {
+      status.textContent = 'Receiving not confirmed: ' + (error?.message || 'Unknown error') + '. Retry with the same values.';
+    } finally {
+      receiveSave.disabled = false;
     }
   });
   await refresh();
