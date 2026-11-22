@@ -62,7 +62,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     for(const [index,line] of lines.entries()){
       const li=el('li',line.name+' — '+line.quantityBase+' '+line.unit+' ');
       const remove=el('button','Remove');remove.type='button';
-      remove.addEventListener('click',()=>{lines.splice(index,1);recipeDirty=true;renderLines();});
+      remove.addEventListener('click',()=>{lines.splice(index,1);recipeDirty=true;priceConfirmation.checked=false;renderLines();});
       li.append(remove);draftLines.append(li);
     }
   };
@@ -112,13 +112,17 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   }
   productSelect.addEventListener('change',()=>{
     priceConfirmation.checked=false;
-    if(loadSavedRecipe(productSelect.value))return;
-    if(loadedRecipeProductId)productSelect.value=loadedRecipeProductId;
+    if(!loadSavedRecipe(productSelect.value) && loadedRecipeProductId){
+      productSelect.value=loadedRecipeProductId;
+    }
+    const snapshot=controller.current();
+    if(snapshot)renderCosting(snapshot);
   });
   const discardRecipeButton=el('button','Discard unsaved recipe edits');
   discardRecipeButton.type='button';
   discardRecipeButton.addEventListener('click',()=>{
     loadSavedRecipe(productSelect.value,true);
+    priceConfirmation.checked=false;
     status.textContent='Saved recipe restored from latest loaded snapshot';
   });
   root.insertBefore(discardRecipeButton,saveRecipeButton.nextSibling);
@@ -194,6 +198,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     if(lines.some(x=>x.itemId===item.id)){status.textContent='Ingredient already added';return;}
     lines.push({itemId:item.id,quantityBase:amount,name:item.name,unit:item.base_unit});
     recipeDirty=true;
+    priceConfirmation.checked=false;
     renderLines();ingredientQty.value='';
   });
   async function saveAction(method,payload,button){
@@ -201,6 +206,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     try{
       const {snapshot}=await controller[method](payload);
       renderCosting(snapshot);
+      priceConfirmation.checked=false;
       status.textContent='Saved successfully to database. '+snapshot.items.length+' items refreshed.';
       if(method==='saveRecipe'){recipeDirty=false;loadSavedRecipe(productSelect.value,true);}
       if(method==='receive'){pendingReceipt=null;qty.value='';totalCost.value='';reference.value='';}
