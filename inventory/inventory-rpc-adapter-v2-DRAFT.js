@@ -19,9 +19,20 @@ export function createInventoryDraftApi(client) {
     return data;
   }
   async function read(table, columns = '*') {
-    const { data, error } = await client.from(table).select(columns);
-    if (error) throw error;
-    return data;
+    // Supabase/PostgREST commonly limits each response to 1,000 rows.
+    // Fetch every page rather than silently undercounting stock movements.
+    const pageSize = 500;
+    const rows = [];
+    for (let offset = 0; ; offset += pageSize) {
+      const { data, error } = await client.from(table)
+        .select(columns)
+        .order('id', { ascending: true })
+        .range(offset, offset + pageSize - 1);
+      if (error) throw error;
+      if (!Array.isArray(data)) throw new TypeError(table + ' returned non-array rows');
+      rows.push(...data);
+      if (data.length < pageSize) return rows;
+    }
   }
   function requireRequestKey(value) {
     if (typeof value !== 'string' ||
