@@ -1,0 +1,30 @@
+name: Approved v16 layout review download
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - '.github/workflows/inventory-v16-layout-review.yml'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
+permissions:
+  contents: read
+jobs:
+  package-layout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Package original approved v16 standalone layout
+        run: |
+          mkdir -p review
+          cp admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html review/approved-v16-layout.html
+      - name: Upload offline browser layout
+        uses: actions/upload-artifact@v4
+        with:
+          name: approved-v16-layout-open-in-browser
+          path: review/approved-v16-layout.html
+          retention-days: 14
+# This artifact is an OFFLINE visual reference, not authenticated LIVE integration.
+# It is not deployed to GitHub Pages and cannot modify production data.
