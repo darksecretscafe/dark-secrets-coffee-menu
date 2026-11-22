@@ -1,0 +1,91 @@
+name: Inventory offline contract tests (DRAFT only)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'inventory/**'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
+      - '.github/workflows/inventory-*.yml'
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - 'admin.html'
+      - 'inventory/inventory-admin-tab-integration-DRAFT.js'
+      - 'inventory/inventory-v16-dashboard-stockmaster-WIP.js'
+      - 'inventory/inventory-v16-approved-style-WIP.css'
+      - 'inventory/tests/inventory-v16-live-integration-contract.test.mjs'
+      - 'inventory/tests/inventory-admin-tab-integration.test.mjs'
+      - 'inventory/inventory-rpc-adapter-v2-DRAFT.js'
+      - 'inventory/inventory-admin-session-gateway-DRAFT.js'
+      - 'inventory/inventory-persistence-controller-DRAFT.js'
+      - 'inventory/inventory-persistent-admin-panel-DRAFT.js'
+      - 'inventory/inventory-costing-snapshot-DRAFT.js'
+      - 'inventory/tests/inventory-costing-snapshot.test.mjs'
+      - 'inventory/tests/inventory-persistent-admin-panel-contract.test.mjs'
+      - 'inventory/tests/inventory-persistence-controller.test.mjs'
+      - 'inventory/tests/inventory-admin-session-gateway.test.mjs'
+      - 'inventory/inventory-readonly-provider-v1-DRAFT.js'
+      - 'inventory/tests/inventory-readonly-provider-v1.test.mjs'
+      - 'inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs'
+      - 'inventory/tests/inventory-rpc-pagination.test.mjs'
+      - 'inventory/tests/menu-inventory-relay-offline.test.mjs'
+      - 'inventory/tests/inventory-v16-offline-release-gate.test.mjs'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
+      - 'inventory/menu-products-snapshot-contract-v3-DRAFT.js'
+      - 'inventory/admin-menu-inventory-relay-v1-DRAFT.js'
+      - '.github/workflows/inventory-offline-contract-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    name: Verify offline adapter contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax-check adapter
+        run: node --check inventory/inventory-rpc-adapter-v2-DRAFT.js
+      - name: Syntax-check offline tests
+        run: node --check inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
+      - name: Run offline mock contract tests
+        run: node inventory/tests/inventory-rpc-adapter-v2-contract.test.mjs
+      - name: Test paginated inventory reads
+        run: node inventory/tests/inventory-rpc-pagination.test.mjs
+      - name: Syntax-check v16 Supabase dashboard and stock master
+        run: node --check inventory/inventory-v16-dashboard-stockmaster-WIP.js
+      - name: Verify v16 live integration source contract
+        run: node --test inventory/tests/inventory-v16-live-integration-contract.test.mjs
+      - name: Test admin inventory tab integration
+        run: node inventory/tests/inventory-admin-tab-integration.test.mjs
+      - name: Test admin session authorization gate
+        run: node inventory/tests/inventory-admin-session-gateway.test.mjs
+      - name: Syntax-check draft persistent admin panel
+        run: node --check inventory/inventory-persistent-admin-panel-DRAFT.js
+      - name: Test draft persistent admin panel contract
+        run: node inventory/tests/inventory-persistent-admin-panel-contract.test.mjs
+      - name: Test WAC and recipe costing projection
+        run: node inventory/tests/inventory-costing-snapshot.test.mjs
+      - name: Test persisted inventory controller
+        run: node inventory/tests/inventory-persistence-controller.test.mjs
+      - name: Test menu-to-inventory relay contract
+        run: node inventory/tests/menu-inventory-relay-offline.test.mjs
+      - name: Test read-only inventory snapshot provider
+        run: node inventory/tests/inventory-readonly-provider-v1.test.mjs
+      - name: Check approved v16 offline workflow invariants
+        run: node inventory/tests/inventory-v16-offline-release-gate.test.mjs
+
+# This workflow uses no Supabase credentials, SQL migrations, deployments,
+# service-role keys, production URLs, or database connections.

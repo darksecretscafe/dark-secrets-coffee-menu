@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dark Secrets Coffee | Inventory Dashboard Draft</title>
+<style>
+:root{font-family:system-ui,Segoe UI,sans-serif;background:#f6f3ef;color:#30271f}*{box-sizing:border-box}body{margin:0}.shell{max-width:1160px;margin:auto;padding:26px 18px 55px}header{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.brand{font-size:1.45rem;font-weight:800}.sub{color:#766b60;font-size:.9rem}.warning{padding:12px 16px;background:#fff0c9;border:1px solid #e0bb68;border-radius:10px;margin:20px 0}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.card{background:#fff;border:1px solid #e4ded7;border-radius:14px;padding:18px;box-shadow:0 3px 13px #2a1d1108}.stat{font-size:1.8rem;font-weight:800;margin-top:6px}.label{font-size:.83rem;color:#74685e}.layout{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:17px}h2{margin:0 0 14px;font-size:1.08rem}table{border-collapse:collapse;width:100%;font-size:.91rem}th{text-align:left;color:#796f66;font-weight:600}th,td{padding:11px 8px;border-bottom:1px solid #eee8e2}th:last-child,td:last-child{text-align:right}.pill{font-size:.75rem;border-radius:20px;padding:4px 9px;background:#f1ede8}.pill.low{background:#fff0d4;color:#885700}.pill.out{background:#fbe0df;color:#922c29}.row{display:flex;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid #eee8e2}.row:last-child{border:0}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.nav button{border:1px solid #ded5cb;background:white;color:#352b22;border-radius:9px;padding:10px 13px;cursor:pointer}.nav button[aria-selected=true]{background:#352b22;color:white}.small{font-size:.82rem;color:#74685e}.empty{padding:24px;text-align:center;color:#766b60}.actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button{font:inherit}button:focus-visible{outline:3px solid #b78036;outline-offset:2px}@media(max-width:760px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:1fr}.shell{padding:18px 12px}table{font-size:.82rem}th,td{padding:9px 4px}}
+</style></head><body><main class="shell">
+<header><div><div class="brand">☕ Dark Secrets Coffee</div><div class="sub">Inventory dashboard · UI prototype</div></div><div class="small">DRAFT · No database connection</div></header>
+<div class="warning"><strong>Safe preview only.</strong> All figures below are fictional demonstration data. This page does not connect to Supabase, save records, change prices, or deduct stock.</div>
+<nav class="nav" aria-label="Dashboard sections"><button type="button" aria-selected="true" data-tab="overview">Overview</button><button type="button" aria-selected="false" data-tab="stock">Stock Master</button><button type="button" aria-selected="false" data-tab="activity">Activity</button><button type="button" aria-selected="false" data-tab="recipes">Recipes</button></nav>
+<section id="overview"><div class="stats"><div class="card"><div class="label">Stock items</div><div class="stat" id="itemCount"></div><div class="small">Ingredients + packaging</div></div><div class="card"><div class="label">Low stock</div><div class="stat" id="lowCount"></div><div class="small">At or below minimum</div></div><div class="card"><div class="label">Out of stock</div><div class="stat" id="outCount"></div><div class="small">Zero balance</div></div><div class="card"><div class="label">Estimated stock value</div><div class="stat" id="totalValue"></div><div class="small">Sample valuation only</div></div></div><div class="layout"><div class="card"><h2>Stock attention</h2><table><thead><tr><th>Item</th><th>Balance</th><th>Status</th></tr></thead><tbody id="attention"></tbody></table></div><div class="card"><h2>Recent activity</h2><div id="recent"></div></div></div></section>
+<section id="stock" hidden><div class="card"><h2>Stock Master · example records</h2><table><thead><tr><th>Item</th><th>Type</th><th>On hand</th><th>Min.</th><th>WAC</th><th>Status</th></tr></thead><tbody id="stockRows"></tbody></table></div></section>
+<section id="activity" hidden><div class="card"><h2>Transaction timeline · sample only</h2><div id="activityRows"></div></div></section>
+<section id="recipes" hidden><div class="card"><h2>Recipe costing · example only</h2><p class="small">These example recipes are not linked to the real menu. Future costing will use actual ingredients, packaging, modifiers and owner-approved target margins.</p><table><thead><tr><th>Drink</th><th>Example cost</th><th>Example target margin</th><th>Suggested price</th></tr></thead><tbody id="recipeRows"></tbody></table></div></section>
+<p class="small" style="margin-top:20px">Prototype only · No credentials · No persistence · No automatic deductions · LIVE remains unchanged.</p>
+</main><script>
+'use strict';
+// Fictional records used solely for layout review; not owner-approved inventory data.
+const items=[
+{name:'Coffee beans (sample)',type:'Ingredient',qty:650,unit:'g',min:1000,wac:.82},
+{name:'Fresh milk (sample)',type:'Ingredient',qty:4200,unit:'ml',min:2000,wac:.11},
+{name:'Oat milk (sample)',type:'Ingredient',qty:0,unit:'ml',min:1000,wac:.18},
+{name:'Plastic cups (sample)',type:'Packaging',qty:120,unit:'pcs',min:80,wac:4},
+{name:'Bottle (sample)',type:'Packaging',qty:18,unit:'pcs',min:30,wac:9},
+{name:'Sugar syrup (sample)',type:'Ingredient',qty:3000,unit:'ml',min:500,wac:.05}
+];
+const activity=[
+{label:'Receiving · milk (sample)',note:'Added 2,000 ml · fictional'},
+{label:'Wastage · coffee beans (sample)',note:'Removed 100 g · fictional'},
+{label:'Stock count · bottles (sample)',note:'Count adjustment · fictional'}
+];
+const recipes=[
+{name:'Sample latte',cost:42,margin:65},
+{name:'Sample iced coffee',cost:36,margin:60}
+];
+const money=n=>'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const status=i=>i.qty===0?'Out':i.qty<=i.min?'Low':'OK';
+const pill=i=>'<span class="pill '+(status(i)==='Out'?'out':status(i)==='Low'?'low':'')+'">'+status(i)+'</span>';
+document.getElementById('itemCount').textContent=items.length;
+document.getElementById('lowCount').textContent=items.filter(i=>i.qty>0&&i.qty<=i.min).length;
+document.getElementById('outCount').textContent=items.filter(i=>i.qty===0).length;
+document.getElementById('totalValue').textContent=money(items.reduce((a,i)=>a+i.qty*i.wac,0));
+document.getElementById('attention').innerHTML=items.filter(i=>status(i)!=='OK').map(i=>'<tr><td>'+i.name+'</td><td>'+i.qty.toLocaleString()+' '+i.unit+'</td><td>'+pill(i)+'</td></tr>').join('');
+document.getElementById('stockRows').innerHTML=items.map(i=>'<tr><td>'+i.name+'</td><td>'+i.type+'</td><td>'+i.qty.toLocaleString()+' '+i.unit+'</td><td>'+i.min.toLocaleString()+'</td><td>'+money(i.wac)+'</td><td>'+pill(i)+'</td></tr>').join('');
+const activityMarkup=activity.map(a=>'<div class="row"><strong>'+a.label+'</strong><span class="small">'+a.note+'</span></div>').join('');
+document.getElementById('recent').innerHTML=activityMarkup;
+document.getElementById('activityRows').innerHTML=activityMarkup;
+document.getElementById('recipeRows').innerHTML=recipes.map(x=>'<tr><td>'+x.name+'</td><td>'+money(x.cost)+'</td><td>'+x.margin+'%</td><td>'+money(x.cost/(1-x.margin/100))+'</td></tr>').join('');
+document.querySelectorAll('[data-tab]').forEach(btn=>btn.addEventListener('click',()=>{
+ const target=btn.dataset.tab;
+ document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b===btn)));
+ ['overview','stock','activity','recipes'].forEach(id=>document.getElementById(id).hidden=id!==target);
+}));
+</script></body></html>

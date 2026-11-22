@@ -1,0 +1,225 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dark Secrets Coffee — Inventory Full Page DRAFT</title><style>
+:root{font:15px system-ui,Segoe UI,sans-serif;color:#302820;background:#f6f3ef}*{box-sizing:border-box}body{margin:0}.shell{width:100%;max-width:none;margin:0;padding:24px clamp(12px,2vw,36px) 55px}header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}h1{font-size:1.5rem;margin:0}h2{font-size:1.1rem;margin:0 0 13px}.muted{color:#796e64}.warning{background:#fff1cb;border:1px solid #e3c47c;border-radius:12px;padding:13px 16px;margin:18px 0}.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}.tabs button{background:white;color:#382a20;border:1px solid #d9d0c6}.tabs button[aria-selected=true]{background:#382a20;color:white}.card{background:white;border:1px solid #e6ded5;border-radius:13px;padding:19px;margin:15px 0}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.stat{background:#f5f0ea;padding:14px;border-radius:10px}.stat strong{display:block;font-size:1.7rem}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}label{display:grid;gap:5px;font-size:.88rem;font-weight:600}input,select,button{font:inherit;border:1px solid #cbbfb4;border-radius:8px;padding:10px;min-width:0}input,select{width:100%;background:white;color:#302820}button{background:#382a20;color:white;cursor:pointer}button.secondary{background:white;color:#382a20}button:disabled{opacity:.48;cursor:not-allowed}button:focus-visible{outline:3px solid #b68137;outline-offset:2px}form{display:grid;gap:12px}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.actions button{padding:8px 10px}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:.9rem}th,td{text-align:left;border-bottom:1px solid #eee8e1;padding:11px 8px}th{color:#796e64}td:last-child{min-width:120px}.pill{font-size:.78rem;border-radius:18px;padding:5px 9px;background:#eee9e3;white-space:nowrap}.draft{background:#fff0c8;color:#795100}.done{background:#dcf1e4;color:#16633a}.alert{background:#fbdcda;color:#9b2925}.small{font-size:.81rem}.compact td,.compact th{padding:7px 8px}.compact td:last-child{min-width:65px}.compact button{padding:6px 10px}.pagination{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}.summary{display:flex;gap:8px;flex-wrap:wrap}.summary span{padding:7px 10px;background:#f5f0ea;border-radius:8px;font-size:.83rem}.status{font-weight:600;min-height:22px}.error{color:#a72e29}.ok{color:#17613b}[hidden]{display:none!important}@media(max-width:720px){.stats,.grid{grid-template-columns:1fr}.shell{padding:15px 12px}}
+.costing-panel{margin:18px 0 14px;padding:19px;border-radius:18px;background:linear-gradient(135deg,#211b17,#443126);color:#fff;box-shadow:0 10px 25px rgba(45,27,16,.15)}.costing-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}.costing-heading strong{font-size:1.05rem;letter-spacing:.03em}.costing-tag{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#f5d3a0;border:1px solid #9d7a50;padding:5px 9px;border-radius:999px}.costing-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.costing-tile{padding:14px;border:1px solid #695247;border-radius:12px;background:rgba(255,255,255,.07);min-width:0}.costing-tile small{display:block;color:#dbcabc;font-size:.76rem;margin-bottom:8px}.costing-tile strong{display:block;font-size:clamp(1.05rem,2.1vw,1.65rem);line-height:1.2;overflow-wrap:anywhere}.costing-tile.profit{background:#e5c394;color:#2c211a;border-color:#e5c394}.costing-tile.profit small{color:#4e392a}.costing-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:14px;color:#ead9c8;font-size:.83rem}.costing-bottom b{color:#fff}.costing-footnote{font-size:.76rem;color:#d6c4b7;margin:10px 0 0}@media(max-width:680px){.costing-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.costing-panel{padding:14px}}.price-controls{display:flex;gap:10px;align-items:end;flex-wrap:wrap;width:100%;max-width:760px;margin-top:15px;padding:14px;background:rgba(255,255,255,.07);border:1px solid #695247;border-radius:12px}.price-controls label{flex:1;min-width:180px;color:#f2e2d3}.price-controls input{background:#fff;color:#2c211a}.price-controls button{background:#e5c394;color:#2c211a;border-color:#e5c394;font-weight:700}.price-hint{color:#ddc9b9;font-size:.76rem;margin:8px 0 0}.costing-tile.price-selected{border-color:#e5c394;background:#554031}.target-box{display:flex;flex-direction:column;gap:5px;text-align:right;min-width:180px}.target-box strong{font-size:1.35rem}.target-box small{font-size:.78rem;font-weight:700}.target-box.good strong,.target-box.good small{color:#8fe4a8}.target-box.low strong,.target-box.low small{color:#ff9999}.target-box.near strong,.target-box.near small{color:#ffd27a}.target-box.unknown strong,.target-box.unknown small{color:#e8d1ae}.finalize{border:1px solid #e3d8cb;border-radius:14px;padding:17px;margin:15px 0;background:#fbf8f4}.finalize-title{font-weight:750;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}.requirements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:15px}.requirement{font-size:.84rem;padding:9px 11px;border-radius:9px;background:#f0ebe4}.requirement.ok{color:#17633a;background:#e7f5eb}.requirement.wait{color:#995029;background:#fff0e4}.finalize-actions{display:flex;align-items:end;gap:12px;flex-wrap:wrap}.finalize-actions label{flex:0 1 240px;min-width:180px;max-width:260px}.finalize-actions select{width:100%}.finalize-actions button{min-height:42px}@media(max-width:600px){.requirements{grid-template-columns:1fr}.target-box{text-align:left}}.target-reference{display:block;font-size:.8rem;color:#ead9c8;margin-top:1px}.target-box strong{font-size:1.55rem}.target-box small{margin-top:3px}.target-box.near strong,.target-box.near small{color:#ffd27a}</style><style>
+.ds-admin-preview-header{background:#291b14;color:#fff;padding:18px clamp(12px,2vw,36px);border-bottom:3px solid #b18a57}
+.ds-admin-preview-header strong{font-size:1.15rem}.ds-admin-preview-header small{display:block;color:#e5c59a;margin-top:4px}
+.ds-admin-preview-nav{display:flex;flex-wrap:wrap;gap:8px;max-width:none;width:100%;margin:16px auto 0;padding:0 clamp(12px,2vw,36px)}
+.ds-admin-preview-nav button{background:#fff;color:#49362b;border:1px solid #d7c7b8;padding:11px 15px;font-weight:650}
+.ds-admin-preview-nav button[aria-current=page]{background:#382a20;color:white}
+.ds-admin-preview-nav button:disabled{opacity:.65}
+</style><style>
+@media(min-width:1000px){
+.costing-panel{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);column-gap:20px;align-items:start}
+.costing-heading{grid-column:1/-1}
+.costing-grid{grid-column:1;grid-row:2/4;grid-template-columns:repeat(2,minmax(0,1fr))}
+.price-controls{grid-column:2;grid-row:2;max-width:none;margin-top:0;display:grid;grid-template-columns:1fr 1fr;align-items:stretch}
+.price-controls label{grid-column:1/-1;min-width:0}
+.price-controls button{min-width:0;padding:10px 6px}
+.costing-bottom{grid-column:2;grid-row:3;display:flex;flex-direction:column;justify-content:flex-start;align-items:flex-start;margin-top:12px}
+.target-box{text-align:left;min-width:0}
+.costing-footnote{grid-column:1/-1;margin-top:14px}
+}
+</style><style>
+/* Desktop: full-width workspace, readable compact forms and tables */
+@media(min-width:900px){
+#recipes>.card{width:100%;max-width:1280px;margin-left:auto;margin-right:auto}
+#recipes>.card .grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:860px}
+#recipes>.card .scroll{max-width:100%;overflow-x:visible}
+#recipes>.card table{width:100%;table-layout:auto}
+#recipes>.card table th,#recipes>.card table td{padding:9px 12px}
+#recipes>.card table th:last-child,#recipes>.card table td:last-child{width:180px}
+#recipeForm{max-width:860px}
+#recipeForm>button{width:auto;justify-self:start;min-width:210px}
+#recipeEditor .costing-panel{max-width:100%}
+#recipes .pagination{max-width:100%}
+}
+@media(min-width:1450px){
+#recipes>.card{max-width:1320px}
+}
+</style></head><body><div class="ds-admin-preview-header"><strong><img src="assets/dark-secrets-logo.png" alt="Dark Secrets Coffee logo" style="width:52px;height:52px;object-fit:contain;vertical-align:middle;margin-right:12px"><span>DARK SECRETS COFFEE · Admin Dashboard</span></strong><small>Standalone DRAFT preview — not connected to LIVE</small></div><nav class="ds-admin-preview-nav" aria-label="Admin dashboard sections"><button type="button" disabled>Active Orders</button><button type="button" disabled>Order History</button><button type="button" disabled>Cancellations</button><button type="button" disabled>Refunds</button><button type="button" disabled>Products</button><button type="button" aria-current="page">Inventory Management</button></nav><main class="shell"><header><div><h1>☕ Dark Secrets Coffee</h1><div class="muted">Simple Inventory Workspace · draft UI</div></div><button id="clear" class="secondary" type="button">Clear demo</button></header><div class="warning"><strong>Draft preview only.</strong> Example menu products are read-only samples, not LIVE data. No LIVE inventory is loaded. Entries are temporary in this tab and disappear on refresh. No Supabase, database saves, price changes or automatic stock deduction.</div>
+<nav class="tabs" aria-label="Inventory sections"><button type="button" data-tab="home" aria-selected="true">Dashboard</button><button type="button" data-tab="stock" aria-selected="false">Stock Master</button><button type="button" data-tab="receive" aria-selected="false">Receive Stock</button><button type="button" data-tab="recipes" aria-selected="false">Recipes & Costing</button></nav>
+<section id="home"><div class="stats"><div class="stat">Stock items<strong id="count">0</strong></div><div class="stat">Low / out of stock<strong id="low">0</strong></div><div class="stat">Recipes needing work<strong id="pending">0</strong></div></div><div class="card"><h2>Quick actions</h2><div class="actions"><button type="button" data-go="stock">Add stock item</button><button type="button" data-go="receive">Receive stock</button><button type="button" data-go="recipes">Manage recipes</button></div></div><div class="card"><h2>How it works</h2><p>Register ingredients once in <strong>Stock Master</strong>, record purchases in <strong>Receive Stock</strong>, then select those same ingredients when building a product recipe. No duplicate cost-item entry.</p><p class="small muted">Menu products in this preview are read-only illustrative examples. The real version will read existing Menu Management products by immutable IDs.</p></div></section>
+<section id="stock" hidden><div class="card"><h2>Stock Master</h2><form id="stockForm"><div class="grid"><label>Ingredient / packaging name<input name="name" maxlength="80" required placeholder="e.g. Coffee beans"></label><label>Category<select name="type"><option value="ingredient">Ingredient</option><option value="packaging">Packaging</option></select></label><label>Base unit<select name="unit"><option value="g">g</option><option value="ml">ml</option><option value="pcs">pcs</option></select></label><label>Minimum stock<input name="min" type="number" min="0" max="999999999" step=".0001" value="0" required></label></div><button>Add stock item</button></form></div><div class="card"><h2>Registered stock items</h2><div class="scroll"><table><thead><tr><th>Item</th><th>Balance</th><th>Average cost / unit</th><th>Status</th></tr></thead><tbody id="stockRows"></tbody></table></div></div></section>
+<section id="receive" hidden><div class="card"><h2>Receive Stock</h2><form id="receiveForm"><div class="grid"><label>Existing stock item<select id="receiveItem" required></select></label><label>Purchase quantity<input id="receiveQty" type="number" min=".0001" max="999999999" step=".0001" required></label><label>Purchase unit<select id="purchaseUnit"></select></label><label>Total purchase cost (₱)<input id="receiveCost" type="number" min="0" max="999999999" step=".01" required></label><label>Supplier reference<input id="reference" maxlength="80" required placeholder="Invoice / reference"></label></div><button>Record demo receiving</button></form></div><div class="card"><h2>Recent receiving</h2><div id="activity" class="muted">No transactions yet.</div></div></section>
+<section id="recipes" hidden><div class="card"><h2>Menu products · Recipe Status</h2><p class="small muted"><strong>Read-only example menu list.</strong> Products below are illustrative, not fetched from LIVE. By default, No Recipe products appear first, Draft next, and Completed last. In production this list will automatically come from Menu Management; add/edit products there only.</p><div id="recipeSummary" class="summary" aria-live="polite"></div><div class="actions"><button id="loadAuthorizedMenu" type="button" class="secondary" hidden aria-hidden="true" tabindex="-1">Load authorized menu (read-only)</button><button id="importMenuSnapshot" type="button" class="secondary" hidden aria-hidden="true" tabindex="-1">Import menu JSON (offline)</button><input id="menuSnapshotFile" type="file" accept=".json,application/json" hidden><span id="menuSource" class="small muted">Sample menu · not connected</span></div><div class="grid" style="margin-top:14px"><label>Find product<input id="productSearch" placeholder="Search menu products"></label><label>Filter by Recipe Status<select id="recipeFilter"><option value="all">All</option><option value="no">No Recipe</option><option value="draft">Draft</option><option value="done">Completed</option></select></label></div><div class="scroll"><table class="compact"><thead><tr><th>Menu product</th><th>Status</th><th>Action</th></tr></thead><tbody id="productRows"></tbody></table></div><div class="pagination"><span id="pageInfo" class="small muted"></span><div class="actions"><button id="prevPage" type="button" class="secondary">Previous</button><button id="nextPage" type="button" class="secondary">Next</button></div></div></div><div class="card" id="recipeEditor" hidden><h2>Recipe Management & Costing</h2><p id="selected" class="muted">Select a product above to set up its recipe.</p><form id="recipeForm"><div class="grid"><label>Existing ingredient / packaging<select id="recipeItem" required></select></label><label>Quantity per serving (base unit)<input id="recipeQty" type="number" min=".0001" max="999999999" step=".0001" required></label></div><button id="addLine">Add selected ingredient</button></form><div class="scroll"><table><thead><tr><th>Recipe ingredient</th><th>Quantity</th><th>Cost</th><th>Action</th></tr></thead><tbody id="lines"></tbody></table></div><section id="estimate" class="costing-panel" aria-live="polite">Select a product to view costing.</section><section class="finalize"><div class="finalize-title">Recipe Finalization <span id="readiness" class="small muted">Select a recipe</span></div><div id="requirements" class="requirements"></div><div class="finalize-actions"><label>Costing Review<select id="review"><option value="no">Pending Review</option><option value="yes">Reviewed</option></select></label><button id="complete" type="button">Approve Completed (demo)</button></div></section><p class="small muted">Approval here is only a simulation. Production needs server-side owner/admin authorization and complete costing validation.</p></div></section>
+<p class="status" id="message" role="status" aria-live="polite"></p><p class="small muted">DRAFT ONLY · All data is in memory. This UI does not connect to the LIVE website, database or menu.</p></main><script>'use strict';
+/**
+ * Dark Secrets Coffee — draft read-only Menu Management product adapter.
+ * This file does not create a Supabase client, import LIVE config, or run a query
+ * on its own. Call createMenuProductReader(injectedAuthenticatedClient).load()
+ * only after explicit approval to connect the inventory UI to the existing DB.
+ */
+(function(root){
+  const COLUMNS='id,product_code,name,price,category,is_active,oat_eligible,description,image_path';
+  const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  function normalize(row){
+    if(!row || !UUID.test(String(row.id||'')))throw new Error('Invalid menu product UUID in response.');
+    const name=String(row.name||'').trim();
+    if(!name)throw new Error('Menu product name is missing.');
+    return Object.freeze({
+      id:String(row.id).toLowerCase(),
+      product_code:row.product_code==null?null:String(row.product_code),
+      name,
+      price:typeof row.price==='number'&&Number.isFinite(row.price)?row.price:null,
+      category:row.category==null?'':String(row.category),
+      is_active:row.is_active===true,
+      oat_eligible:row.oat_eligible===true
+    });
+  }
+  function createMenuProductReader(client){
+    if(!client || typeof client.from!=='function')throw new TypeError('An authenticated Supabase client must be injected.');
+    return Object.freeze({
+      async load(){
+        // RLS must authorize this read for the signed-in user.
+        const {data,error}=await client.from('products').select(COLUMNS).order('product_code');
+        if(error)throw new Error('Menu product read failed: '+(error.message||'unknown error'));
+        if(!Array.isArray(data))throw new Error('Menu product response was not an array.');
+        const ids=new Set();
+        return data.map(row=>{
+          const p=normalize(row);
+          if(ids.has(p.id))throw new Error('Duplicate product UUID in menu response.');
+          ids.add(p.id);
+          return p;
+        });
+      }
+    });
+  }
+  root.DSInventoryMenuReader=Object.freeze({createMenuProductReader,normalize,COLUMNS});
+})(typeof window!=='undefined'?window:globalThis);
+</script><script>'use strict';
+/* DRAFT integration bridge: host supplies an authenticated client after approval.
+   Does not initialize a client, read config, or issue queries automatically. */
+(function(root){
+  function attach({button,clientProvider,onProducts,onError,onStatus}){
+    if(!button||typeof clientProvider!=='function'||typeof onProducts!=='function')throw new TypeError('Missing required UI integration arguments.');
+    let busy=false;
+    button.addEventListener('click',async function(){
+      if(busy)return;
+      const client=clientProvider();
+      if(!client||typeof client.from!=='function'){
+        onError?.('No approved authenticated client. Showing sample menu only.');
+        return;
+      }
+      if(!root.confirm('Load existing menu products read-only? No product changes will be made.'))return;
+      busy=true;button.disabled=true;
+      try{
+        const products=await root.DSInventoryMenuReader.createMenuProductReader(client).load();
+        onProducts(products);
+        onStatus?.('Loaded '+products.length+' existing menu products (read-only).');
+      }catch(e){onError?.(e.message)}
+      finally{busy=false;button.disabled=false}
+    });
+  }
+  root.DSInventoryMenuBridge=Object.freeze({attach});
+})(typeof window!=='undefined'?window:globalThis);
+</script><script>
+'use strict';
+const stock=[],products=[],activity=[];let selectedId=null,nextStock=1,page=0,menuSource="sample",editingLine=-1;
+const samplePrices={'Americano':100,'Cafe Latte':115,'Spanish Latte':125,'White Choco Mocha':125,'Caramel Macchiato':125,'Matcha Latte':130,'Berries & Cream':100,'Hot Chocolate':80};
+const sampleMenuNames=['Americano','Cafe Latte','Spanish Latte','White Choco Mocha','Caramel Macchiato','Matcha Latte','Berries & Cream','Hot Chocolate'];
+function loadReadOnlyDemoMenu(){products.length=0;sampleMenuNames.forEach((name,i)=>products.push({id:'00000000-0000-4000-8000-'+String(i+1).padStart(12,'0'),name,price:samplePrices[name],customPrice:null,status:'no',lines:[],margin:null,reviewed:false}));}
+function applyAuthorizedMenu(rows){
+ const existing=new Map(products.map(p=>[p.id,p]));
+ const next=rows.map(p=>{const old=existing.get(p.id);return {id:p.id,name:p.name,price:p.price,customPrice:old?.customPrice??null,is_active:p.is_active,status:old?.status||'no',lines:old?.lines||[],margin:old?.margin??null,reviewed:old?.reviewed||false}});
+ products.splice(0,products.length,...next);
+ menuSource='authorized';page=0;
+ if(!products.some(p=>p.id===selectedId))selectedId=null;
+ render();
+}
+function loadRecipeExample(){
+ if(menuSource!=='sample'){say('Examples are available only in sample mode.',true);return}
+ stock.length=0;nextStock=1;
+ const entries=[['Coffee Beans','g',1000,800],['Fresh Milk','ml',1000,120],['Plastic Cup','pcs',50,150],['Cup Lid','pcs',50,75],['Sugar','g',1000,60]];
+ entries.forEach(([name,unit,qty,value])=>stock.push({id:nextStock++,name,type:'Ingredient / Packaging',unit,min:0,qty,value}));
+ products.forEach(p=>{p.lines=[];p.margin=null;p.customPrice=null;p.reviewed=false;p.status='no'});
+ const latte=products.find(p=>p.name==='Cafe Latte');
+ if(latte){latte.lines=[{stockId:1,qty:18},{stockId:2,qty:200},{stockId:3,qty:1},{stockId:4,qty:1}];latte.margin=null;latte.status='draft'}
+ const spanish=products.find(p=>p.name==='Spanish Latte');if(spanish){spanish.lines=[{stockId:1,qty:18},{stockId:2,qty:180},{stockId:5,qty:15},{stockId:3,qty:1},{stockId:4,qty:1}];spanish.margin=null;spanish.status='draft'}
+ const americano=products.find(p=>p.name==='Americano');
+ if(americano){americano.lines=[{stockId:1,qty:18},{stockId:3,qty:1},{stockId:4,qty:1}];americano.margin=null;americano.reviewed=true;americano.status='done'}
+ selectedId=latte?.id||null;page=0;activity.length=0;render();say('Sample loaded: Cafe Latte and Spanish Latte Draft, Americano Completed. All figures are illustrative; refresh clears changes.');
+}
+const $=id=>document.getElementById(id),escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}),fmt=n=>Number(n.toFixed(4)).toLocaleString('en-PH',{maximumFractionDigits:4}),selected=()=>products.find(x=>x.id===selectedId);
+function say(t,error=false){$('message').textContent=t;$('message').className='status '+(error?'error':'ok')}
+function num(v,zero=false){if(v===null||String(v).trim()==='')throw Error('Please enter a number.');const n=Number(v);if(!Number.isFinite(n)||n<0||(!zero&&n===0)||n>999999999||Math.abs(n*10000-Math.round(n*10000))>0.0001)throw Error('Use a valid number with at most four decimals.');return n}
+function show(tab){document.querySelectorAll('nav button[data-tab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));['home','stock','receive','recipes'].forEach(id=>$(id).hidden=id!==tab)}
+document.querySelectorAll('[data-tab],[data-go]').forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab||b.dataset.go)));
+function units(x){return x.unit==='g'?['g','kg']:x.unit==='ml'?['ml','l']:['pcs']}
+function syncUnits(){const x=stock.find(s=>String(s.id)===$('receiveItem').value);$('purchaseUnit').innerHTML=(x?units(x):[]).map(u=>'<option>'+u+'</option>').join('')}
+function render(){
+ $('menuSource').textContent=menuSource==='authorized'?'Authorized read-only menu snapshot · recipe edits are temporary':menuSource==='offline'?'Offline JSON menu snapshot · no database connection':'Sample menu · not connected';
+ $('count').textContent=stock.length;$('low').textContent=stock.filter(s=>s.qty<=s.min).length;$('pending').textContent=products.filter(p=>p.status!=='done').length;
+ $('stockRows').innerHTML=stock.map(s=>{const state=s.qty===0?'Out':s.qty<=s.min?'Low':'OK';return '<tr><td>'+escapeHTML(s.name)+'</td><td>'+fmt(s.qty)+' '+s.unit+'</td><td>'+(s.qty?money(s.value/s.qty):'—')+'</td><td><span class="pill '+(state==='Out'?'alert':state==='Low'?'draft':'')+'">'+state+'</span></td></tr>'}).join('')||'<tr><td colspan="4" class="muted">No stock items yet.</td></tr>';
+ const previous=$('receiveItem').value;$('receiveItem').innerHTML=stock.map(s=>'<option value="'+s.id+'">'+escapeHTML(s.name)+'</option>').join('')||'<option value="">Add stock item first</option>';if(stock.some(s=>String(s.id)===previous))$('receiveItem').value=previous;syncUnits();
+ $('activity').innerHTML=activity.slice(-8).reverse().map(a=>'<p>'+escapeHTML(a)+'</p>').join('')||'No transactions yet.';
+ const term=$('productSearch').value.trim().toLowerCase(),filter=$('recipeFilter').value;
+ $('recipeSummary').innerHTML='<span>All: <strong>'+products.length+'</strong></span><span>No Recipe: <strong>'+products.filter(p=>p.status==='no').length+'</strong></span><span>Draft: <strong>'+products.filter(p=>p.status==='draft').length+'</strong></span><span>Completed: <strong>'+products.filter(p=>p.status==='done').length+'</strong></span>';
+ const priority={no:0,draft:1,done:2};const matches=products.filter(p=>(filter==='all'||p.status===filter)&&p.name.toLowerCase().includes(term)).sort((a,b)=>priority[a.status]-priority[b.status]||a.name.localeCompare(b.name));const pages=Math.max(1,Math.ceil(matches.length/5));page=Math.max(0,Math.min(page,pages-1));
+ $('productRows').innerHTML=matches.slice(page*5,page*5+5).map(p=>'<tr><td>'+escapeHTML(p.name)+'</td><td><span class="pill '+(p.status==='done'?'done':p.status==='draft'?'draft':'')+'">'+(p.status==='no'?'No Recipe':p.status==='draft'?'Draft':'Completed')+'</span></td><td><button type="button" data-select="'+p.id+'">'+(p.status==='done'?'View':p.status==='draft'?'Continue':'Select')+'</button></td></tr>').join('')||'<tr><td colspan="3" class="muted">No matching menu products.</td></tr>';
+ $('pageInfo').textContent=matches.length?'Showing '+(page*5+1)+'–'+Math.min((page+1)*5,matches.length)+' of '+matches.length+' · Page '+(page+1)+'/'+pages:'No products to show';
+ $('prevPage').disabled=page===0;$('nextPage').disabled=page>=pages-1;
+ $('recipeEditor').hidden=!selectedId;
+ $('recipeItem').innerHTML=stock.map(s=>'<option value="'+s.id+'">'+escapeHTML(s.name)+' ('+s.unit+')</option>').join('')||'<option value="">Add stock item first</option>';
+ renderRecipe();
+}
+function renderRecipe(){const p=selected();$('selected').textContent=p?'Selected: '+p.name+' · Product ID: '+p.id:'Select a product above to set up its recipe.';$('addLine').disabled=!p||stock.length===0;$('complete').disabled=!p||p.status!=='draft';if(!p){$('requirements').innerHTML='';$('readiness').textContent='Select a recipe';$('lines').innerHTML='<tr><td colspan="4">No recipe selected.</td></tr>';$('estimate').textContent='No recipe selected.';return}
+ const checks=[['Ingredients & quantities',p.lines.length>0],['Ingredient costs available',p.lines.length>0&&p.lines.every(l=>{const x=stock.find(s=>s.id===l.stockId);return !!x&&x.qty>0})],['Selling price available',(p.customPrice??p.price)>0],['Costing reviewed',p.reviewed]];
+ $('requirements').innerHTML=checks.map(([label,ok])=>'<div class="requirement '+(ok?'ok':'wait')+'">'+(ok?'✓ ':'○ ')+label+'</div>').join('');
+ $('readiness').textContent=checks.filter(x=>x[1]).length+' of 4 ready';
+ $('review').value=p.reviewed?'yes':'no';
+ let cost=0;$('lines').innerHTML=p.lines.map((l,i)=>{const s=stock.find(x=>x.id===l.stockId),c=s&&s.qty?s.value/s.qty*l.qty:null;if(c!==null)cost+=c;return '<tr><td>'+escapeHTML(s?.name||'Unknown')+'</td><td>'+(editingLine===i?'<input data-edit-qty="'+i+'" aria-label="Quantity" type="number" min="0.0001" step="0.0001" value="'+l.qty+'" style="max-width:120px">':fmt(l.qty))+' '+(s?.unit||'')+'</td><td>'+(c===null?'Cost unavailable':money(c))+'</td><td>'+(editingLine===i?'<button type="button" data-save-line="'+i+'">Save</button> <button type="button" class="secondary" data-cancel-line>Cancel</button>':'<button type="button" class="secondary" data-edit-line="'+i+'">Edit</button> <button type="button" class="secondary" data-remove="'+i+'">Remove</button>')+'</td></tr>'}).join('')||'<tr><td colspan="4">No ingredients assigned yet.</td></tr>';
+ const missing=p.lines.length===0||p.lines.some(l=>{const s=stock.find(x=>x.id===l.stockId);return !s||s.qty<=0||!Number.isFinite(s.value/s.qty)||!Number.isFinite(l.qty)||l.qty<=0});
+ const price=Number.isFinite(p.price)?p.price:null;
+ const applied=Number.isFinite(p.customPrice)?p.customPrice:price;
+ const profit=applied===null||missing?null:applied-cost;
+ const margin=profit===null||applied<=0?null:profit/applied*100;
+ const costPct=missing||applied<=0?null:cost/applied*100;
+ const tile=(label,value,highlight=false)=>'<div class="costing-tile'+(highlight?' profit':'')+'"><small>'+label+'</small><strong>'+value+'</strong></div>';
+ const value=(v)=>v===null?'—':money(v);
+ $('estimate').innerHTML='<div class="costing-heading"><strong>RECIPE COSTING OVERVIEW</strong><span class="costing-tag">Illustrative data</span></div><div class="costing-grid">'+
+ tile('Recipe Cost',missing?'Incomplete Costing':money(cost))+tile('Current Menu Price',value(price))+tile('Your Selling Price',value(applied),true)+tile('Gross Profit',value(profit))+tile('Recipe Cost %',costPct===null?'—':costPct.toFixed(1)+'%')+tile('Recipe Gross Margin',margin===null?'—':margin.toFixed(1)+'%')+
+ '</div><div class="price-controls"><label>Set your preferred selling price (₱)<input id="customPriceInput" type="number" min="0.01" step="0.01" value="'+(p.customPrice??applied??'')+'" placeholder="Enter preferred price"></label><button id="applyCustomPrice" type="button">Apply Price</button><button id="resetCustomPrice" type="button" class="secondary">Use Menu Price</button></div><div class="costing-bottom"><span>Recipe costing is calculated from ingredients and selling price.</span><span class="target-box '+(margin===null?'unknown':margin<=0?'low':'unknown')+'"><strong>Recipe Gross Margin: '+(margin===null?'—':margin.toFixed(1)+'%')+'</strong>'+(margin===null?'<small>Incomplete costing</small>':margin<=0?'<small>✕ Zero or negative recipe margin</small>':'')+'</span></div><p class="costing-footnote">Demo costing only · No changes to LIVE menu prices · Recipe-level figures exclude operating expenses and other unallocated costs</p>';
+}
+function changed(p){p.reviewed=false;if(p.status==='done'){p.status='draft';say('Completed recipe changed: returned to Draft for costing review.')}else if(p.status==='no'){p.status='draft'}}
+$('stockForm').addEventListener('submit',e=>{e.preventDefault();try{const f=new FormData(e.currentTarget),name=String(f.get('name')).trim();if(!name||stock.some(s=>s.name.toLowerCase()===name.toLowerCase()))throw Error('Enter a unique stock item name.');stock.push({id:nextStock++,name,type:String(f.get('type')),unit:String(f.get('unit')),min:num(f.get('min'),true),qty:0,value:0});e.currentTarget.reset();render();say('Stock item registered once; now selectable in recipes.')}catch(err){say(err.message,true)}});
+$('receiveItem').addEventListener('change',syncUnits);
+$('receiveForm').addEventListener('submit',e=>{e.preventDefault();try{const s=stock.find(x=>String(x.id)===$('receiveItem').value);if(!s)throw Error('Register a stock item first.');const qty=num($('receiveQty').value),cost=num($('receiveCost').value,true),unit=$('purchaseUnit').value;if(!units(s).includes(unit))throw Error('Invalid purchase unit.');const delta=qty*(unit==='kg'||unit==='l'?1000:1);if(s.qty+delta>999999999)throw Error('Stock limit exceeded.');const reference=$('reference').value.trim();if(!reference)throw Error('Reference is required.');s.qty=Number((s.qty+delta).toFixed(4));s.value=Number((s.value+cost).toFixed(6));activity.push('Received '+fmt(delta)+' '+s.unit+' '+s.name+' · '+reference);products.forEach(p=>{if(p.lines.some(l=>l.stockId===s.id)&&p.status==='done'){p.status='draft';p.reviewed=false}});e.currentTarget.reset();render();say('Demo receiving recorded. Affected Completed recipes returned to Draft for cost review.')}catch(err){say(err.message,true)}});
+$('productRows').addEventListener('click',e=>{const b=e.target.closest('button[data-select]');if(!b)return;selectedId=b.dataset.select;render();say('Product selected. Add ingredients below.')});
+$('recipeForm').addEventListener('submit',e=>{e.preventDefault();try{const p=selected(),s=stock.find(x=>String(x.id)===$('recipeItem').value);if(!p||!s)throw Error('Select a product and stock item.');const qty=num($('recipeQty').value);if(p.lines.some(l=>l.stockId===s.id))throw Error('Ingredient already assigned. Remove it before replacing quantity.');p.lines.push({stockId:s.id,qty});changed(p);render();say('Ingredient linked to recipe without duplicate registration.')}catch(err){say(err.message,true)}});
+$('lines').addEventListener('click',e=>{const btn=e.target.closest('button'),p=selected();if(!btn||!p)return;
+ if(btn.hasAttribute('data-edit-line')){editingLine=Number(btn.dataset.editLine);render();return}
+ if(btn.hasAttribute('data-cancel-line')){editingLine=-1;render();return}
+ if(btn.hasAttribute('data-save-line')){const i=Number(btn.dataset.saveLine),input=$('lines').querySelector('[data-edit-qty="'+i+'"]');if(!input||!p.lines[i])return;try{const qty=num(input.value);if(qty>999999999)throw Error('Quantity exceeds limit.');p.lines[i].qty=qty;editingLine=-1;changed(p);render();say('Ingredient quantity updated; costing recalculated.')}catch(err){say(err.message,true)}return}
+ if(btn.hasAttribute('data-remove')){const i=Number(btn.dataset.remove);if(!Number.isInteger(i)||i<0||i>=p.lines.length)return;p.lines.splice(i,1);editingLine=-1;changed(p);if(!p.lines.length)p.status='no';render();say('Recipe ingredient removed; status updated.')}
+});
+$('estimate').addEventListener('click',e=>{const p=selected();if(!p)return;if(e.target.id==='applyCustomPrice'){try{const n=num($('customPriceInput').value);if(n>1000000)throw Error('Price exceeds demo limit.');p.customPrice=n;changed(p);render();say('Preferred selling price applied to this demo recipe only.')}catch(err){say(err.message,true)}}if(e.target.id==='resetCustomPrice'){p.customPrice=null;changed(p);render();say('Demo selling price reset to current menu price.')}});
+
+$('review').addEventListener('change',()=>{const p=selected();if(!p)return;p.reviewed=$('review').value==='yes';render();say('Costing review status updated in demo.')});
+$('complete').addEventListener('click',()=>{const p=selected();if(!p||p.status!=='draft')return;const missing=p.lines.some(l=>{const s=stock.find(x=>x.id===l.stockId);return !s||s.qty===0});if(!p.lines.length||!((p.customPrice??p.price)>0)||!p.reviewed||missing){say('Complete recipe lines, ingredient WAC, selling price and review first.',true);return}if(!confirm('Simulate owner approval? This does not save or authenticate anything.'))return;p.status='done';render();say('Completed in demo only.')});
+$('importMenuSnapshot').addEventListener('click',()=>$('menuSnapshotFile').click());
+$('menuSnapshotFile').addEventListener('change',async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>1024*1024)throw Error('Menu JSON must be under 1 MB.');
+  const parsed=JSON.parse(await file.text());
+  if(!Array.isArray(parsed)||!parsed.length||parsed.length>1000)throw Error('Expected a nonempty JSON array of up to 1000 products.');
+  const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,ids=new Set();
+  const rows=parsed.map(row=>{
+   if(!row||!uuid.test(String(row.id||'')))throw Error('Each product needs a valid UUID.');
+   const id=String(row.id).toLowerCase(),name=String(row.name||'').trim();
+   if(ids.has(id)||!name||name.length>150||typeof row.price!=='number'||!Number.isFinite(row.price)||row.price<0)throw Error('Duplicate ID, invalid name, or invalid price in JSON.');
+   ids.add(id);return {id,name,price:row.price,is_active:row.is_active===true};
+  });
+  const retained=rows.filter(row=>products.some(p=>p.id===row.id)).length;
+  const losing=products.filter(p=>!ids.has(p.id)&&(p.lines.length>0||p.reviewed||p.customPrice!==null)).length;
+  const message='Validated '+rows.length+' products. '+retained+' match current Product IDs. '+losing+' edited recipe(s) would be removed from this temporary browser session. Continue importing? No LIVE data will change.';
+  if(!confirm(message))return;
+  applyAuthorizedMenu(rows);menuSource='offline';render();say('Imported '+rows.length+' products locally. No LIVE connection or database changes.');
+ }catch(err){say('Offline menu import failed: '+err.message,true)}
+ finally{e.target.value=''}
+});
+DSInventoryMenuBridge.attach({button:$('loadAuthorizedMenu'),clientProvider:()=>window.DS_INVENTORY_APPROVED_CLIENT,onProducts:applyAuthorizedMenu,onError:m=>say(m,true),onStatus:m=>say(m)});
+$('recipeFilter').addEventListener('change',()=>{page=0;render()});$('productSearch').addEventListener('input',()=>{page=0;render()});$('prevPage').addEventListener('click',()=>{page--;render()});$('nextPage').addEventListener('click',()=>{page++;render()});
+$('clear').addEventListener('click',()=>{stock.length=0;products.length=0;activity.length=0;selectedId=null;nextStock=1;page=0;menuSource="sample";loadReadOnlyDemoMenu();$('productSearch').value='';$('recipeFilter').value='all';show('home');render();say('Demo cleared. LIVE data untouched.')});loadReadOnlyDemoMenu();loadRecipeExample();show('recipes');
+</script></body></html>

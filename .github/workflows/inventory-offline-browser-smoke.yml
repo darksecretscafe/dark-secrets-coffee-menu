@@ -1,0 +1,56 @@
+name: Inventory offline preview browser smoke test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'inventory/**'
+      - 'admin-inventory-integrated-v16-price-review-gated-approval-DRAFT.html'
+      - '.github/workflows/inventory-*.yml'
+  push:
+    branches:
+      - feature/inventory-phase1-foundation
+    paths:
+      - 'inventory/inventory-readonly-preview-v1-DRAFT.html'
+      - 'inventory/inventory-readonly-provider-v1-DRAFT.js'
+      - 'inventory/tests/inventory-readonly-preview-browser.test.mjs'
+      - 'inventory/tests/inventory-persistent-admin-panel-browser.test.mjs'
+      - 'inventory/inventory-persistent-admin-panel-DRAFT.js'
+      - '.github/workflows/inventory-offline-browser-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-24.04
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install isolated browser test dependency
+        run: npm install --no-save --no-package-lock @playwright/test@1.56.1
+      - name: Run offline browser smoke test
+        run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs inventory/tests/inventory-persistent-admin-panel-browser.test.mjs
+        env:
+          CI: 'true'
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-offline-browser-failure
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+# No Supabase credentials, LIVE endpoints, database migrations, or deployment.

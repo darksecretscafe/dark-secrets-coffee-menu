@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dark Secrets Coffee — Stock Receiving Preview</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#2c241e;background:#f7f3ee}*{box-sizing:border-box}body{margin:0}.wrap{max-width:1040px;margin:auto;padding:28px 18px 60px}h1{margin:0;font-size:1.8rem}h2{font-size:1.1rem;margin:0 0 15px}.muted{color:#746a61}.banner{background:#fff2d3;border:1px solid #e5c681;border-radius:10px;padding:14px;margin:20px 0}.card{background:#fff;border:1px solid #e6ded6;border-radius:14px;padding:20px;margin-top:18px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}label{display:flex;flex-direction:column;gap:6px;font-size:.9rem;font-weight:600}input,select,button{font:inherit;border-radius:8px;border:1px solid #cfc5bb;padding:10px 12px}button{background:#39281d;border-color:#39281d;color:#fff;cursor:pointer}button.secondary{background:white;color:#39281d}.actions{display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap}.scroll{overflow:auto}table{width:100%;border-collapse:collapse;min-width:650px}td,th{text-align:left;padding:12px;border-bottom:1px solid #eee7df}th{background:#faf7f3;font-size:.88rem}.help{font-size:.85rem;color:#746a61;margin-top:4px}.success{color:#216c35;font-weight:600} @media(max-width:640px){.grid{grid-template-columns:1fr}h1{font-size:1.4rem}}
+</style></head><body><main class="wrap"><h1>Stock Receiving</h1><p class="muted">Dark Secrets Coffee · Inventory Management</p>
+<div class="banner"><strong>PREVIEW ONLY — NOT CONNECTED TO SUPABASE.</strong> This is a local demonstration. Nothing is written to LIVE inventory, orders, or stock movements. Refreshing clears all preview entries.</div>
+<section class="card"><h2>Record stock received</h2><form id="receive"><div class="grid">
+<label>Inventory item<select name="item" required><option value="">Select an example item</option><option value="beans">Coffee Beans — base unit g</option><option value="milk">Fresh Milk — base unit ml</option><option value="oat">Oat Milk — base unit ml</option><option value="cups">Regular Cups — base unit pcs</option><option value="bottles">Take Away Bottles — base unit pcs</option></select></label>
+<label>Purchase unit<select name="unit" required><option value="">Choose an item first</option></select></label>
+<label>Quantity received<input name="quantity" type="number" step="0.0001" min="0.0001" required placeholder="e.g. 2"></label>
+<label>Total purchase cost (PHP)<input name="total_cost" type="number" step="0.01" min="0" required placeholder="e.g. 1200.00"></label>
+<label>Supplier<input name="supplier" maxlength="100" placeholder="Optional"></label>
+<label>Invoice / receipt number<input name="invoice" maxlength="80" placeholder="Optional"></label>
+<label>Batch number<input name="batch" maxlength="80" placeholder="Optional"></label>
+<label>Expiration date<input name="expiry" type="date"></label>
+</div><div class="actions"><button type="submit">Add to preview ledger</button><button type="reset" class="secondary">Clear form</button></div><p id="message" role="status" class="help"></p></form></section>
+<section class="card"><h2>Preview stock movement ledger</h2><div class="scroll"><table><thead><tr><th>Item</th><th>Received</th><th>Base quantity</th><th>Total cost</th><th>Unit cost / base unit</th><th>Supplier</th><th>Invoice</th></tr></thead><tbody id="ledger"><tr><td colspan="7">No preview receipts yet.</td></tr></tbody></table></div><p class="help">Example items are not loaded from Stock Master. In the real implementation, item IDs and unit conversions must come from the database; stock ledger writes must use a secure server-side transaction.</p></section></main>
+<script>
+'use strict';
+const items={beans:{name:'Coffee Beans',base:'g',units:{g:1,kg:1000}},milk:{name:'Fresh Milk',base:'ml',units:{ml:1,l:1000}},oat:{name:'Oat Milk',base:'ml',units:{ml:1,l:1000}},cups:{name:'Regular Cups',base:'pcs',units:{pcs:1}},bottles:{name:'Take Away Bottles',base:'pcs',units:{pcs:1}}};
+const form=document.getElementById('receive'),ledger=document.getElementById('ledger'),message=document.getElementById('message'),entries=[];
+function refreshUnits(){const key=form.elements.item.value,sel=form.elements.unit;sel.replaceChildren();if(!items[key]){sel.append(new Option('Choose an item first',''));return;}for(const unit of Object.keys(items[key].units))sel.append(new Option(unit,unit));}
+form.elements.item.addEventListener('change',refreshUnits);
+form.addEventListener('reset',()=>{message.textContent='';queueMicrotask(refreshUnits);});
+form.addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(form).entries()),item=items[data.item],qty=Number(data.quantity),cost=Number(data.total_cost);
+if(!item||!Object.hasOwn(item.units,data.unit)||!Number.isFinite(qty)||qty<=0||!Number.isFinite(cost)||cost<0){message.textContent='Please enter valid item, quantity, purchase unit, and total cost.';return;}
+const baseQty=qty*item.units[data.unit];if(!Number.isFinite(baseQty)||baseQty<=0||baseQty>1e12){message.textContent='Quantity is outside the preview range.';return;}
+entries.unshift({item:item.name,received:qty+' '+data.unit,base:baseQty.toLocaleString('en-PH',{maximumFractionDigits:4})+' '+item.base,cost,unitCost:cost/baseQty,supplier:data.supplier||'—',invoice:data.invoice||'—'});
+ledger.replaceChildren();for(const x of entries){const tr=document.createElement('tr');[x.item,x.received,x.base,'₱'+x.cost.toFixed(2),'₱'+x.unitCost.toFixed(6),x.supplier,x.invoice].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.append(td)});ledger.append(tr)}
+message.textContent='Preview receipt added. No database changes were made.';message.className='success';form.reset();});
+refreshUnits();
+</script></body></html>
