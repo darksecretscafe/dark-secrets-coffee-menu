@@ -71,6 +71,21 @@ test('admin panel loads persisted mock data, WAC, and recipe switching',async({p
   await page.locator('select').filter({has:page.locator('option', {hasText:'Tea'})}).selectOption({label:'Tea — 3'});
   await expect(page.locator('ul li')).toHaveCount(0);
   await expect(page.getByText('Saved selling price: 3')).toBeVisible();
+  // A saved recipe must not be replaced accidentally while an edit is pending.
+  const productPicker=page.locator('select').filter({has:page.locator('option',{hasText:'Latte'})});
+  await productPicker.selectOption({label:'Latte — 5'});
+  await expect(page.locator('ul li')).toContainText(['Coffee Beans — 20 g Remove']);
+  await page.getByRole('button',{name:'Remove'}).click();
+  await expect(page.locator('ul li')).toHaveCount(0);
+  await productPicker.selectOption({label:'Tea — 3'});
+  await expect(productPicker).toHaveValue('00000000-0000-4000-8000-000000000003');
+  await expect(page.getByRole('status')).toContainText('Unsaved recipe edits');
+  await page.getByRole('button',{name:'Approve recipe'}).click();
+  await expect(page.getByRole('status')).toContainText('Save or discard unsaved recipe edits');
+  await page.getByRole('button',{name:'Discard unsaved recipe edits'}).click();
+  await expect(page.locator('ul li')).toContainText(['Coffee Beans — 20 g Remove']);
+  await page.getByRole('button',{name:'Confirm saved menu price reviewed'}).click();
+  await expect(page.getByRole('status')).toContainText('tick the confirmation');
   expect(errors).toEqual([]);
   expect(requests.every(url=>new URL(url).origin===new URL(page.url()).origin)).toBe(true);
 });
