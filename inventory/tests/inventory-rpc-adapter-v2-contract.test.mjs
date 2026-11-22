@@ -8,7 +8,7 @@ const { createInventoryDraftApi } = await import('data:text/javascript;charset=u
 const calls = [];
 const client = {
   rpc: async (name, args) => { calls.push({ name, args }); return { data: { ok: true }, error: null }; },
-  from: table => ({ select: async columns => { calls.push({ table, columns }); return { data: [], error: null }; } })
+  from: table => ({ select: columns => ({ order: () => ({ range: async () => { calls.push({ table, columns }); return { data: [], error: null }; } }) }) })
 };
 const api = createInventoryDraftApi(client);
 const key = '123e4567-e89b-42d3-a456-426614174000';
@@ -44,7 +44,7 @@ assert.deepEqual(calls.slice(7).map(x=>x.table), [
 ]);
 const denied = createInventoryDraftApi({
   rpc: async () => ({ data: null, error: { message: 'permission denied' } }),
-  from: () => ({ select: async () => ({ data: null, error: { message: 'permission denied' } }) })
+  from: () => ({ select: () => ({ order: () => ({ range: async () => ({ data: null, error: { message: 'permission denied' } }) }) }) })
 });
 await assert.rejects(() => denied.saveRecipe({ productId: 'x', lines: [] }), { message: 'permission denied' });
 await assert.rejects(() => denied.listItems(), { message: 'permission denied' });
