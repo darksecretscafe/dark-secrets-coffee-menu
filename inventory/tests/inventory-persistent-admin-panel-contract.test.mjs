@@ -19,4 +19,9 @@ assert.match(source,/pendingCorrection\.requestKey/,'Correction retry uses same 
 assert.match(source,/pendingCorrection\.fingerprint!==fingerprint/,'Changed correction cannot reuse key');
 assert.match(source,/saveAction\('correct'/,'Correction uses persisted RPC controller');
 assert.match(source,/pendingCorrection=null;correctionQuantity\.value/,'Correction retry key clears only after confirmed success');
+assert.match(source,/snapshot\.recipeLines\.filter\(line=>line\.recipe_id===recipe\.id\)/,'Load all existing saved recipe lines');
+assert.match(source,/if\(recipeDirty&&!force\)/,'Protect unsaved edits when switching products');
+assert.match(source,/Discard unsaved recipe edits/,'Explicit discard option');
+assert.match(source,/if\(!recipeDirty\)loadSavedRecipe/,'Refresh does not overwrite unsaved edits');
+assert.match(source,/loadedRecipeProductId!==productSelect\.value/,'Do not save recipe lines for a different product');
 console.log('PASS: draft UI purchase-unit mapping and receipt retry guard');
