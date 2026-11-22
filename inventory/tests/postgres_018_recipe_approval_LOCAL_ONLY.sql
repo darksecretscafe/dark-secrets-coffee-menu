@@ -9,6 +9,21 @@ begin
  v_recipe:=public.inventory_save_recipe_draft(
    '22222222-2222-4222-8222-222222222222'::uuid,
    jsonb_build_array(jsonb_build_object('item_id',v_item,'quantity_base',12)),60);
+ -- Approval must fail before any price review is recorded.
+ begin
+   perform public.inventory_approve_recipe_draft('22222222-2222-4222-8222-222222222222'::uuid);
+   raise exception 'SECURITY FAILURE: approval without review succeeded';
+ exception when raise_exception then
+   if sqlerrm='SECURITY FAILURE: approval without review succeeded' then raise; end if;
+ end;
+ -- A non-admin must not be able to record a price review either.
+ perform set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',true);
+ begin
+   perform public.inventory_review_recipe_price_draft('22222222-2222-4222-8222-222222222222'::uuid);
+   raise exception 'SECURITY FAILURE: nonadmin price review succeeded';
+ exception when insufficient_privilege then null;
+ end;
+ perform set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
  -- Test fixture product has no price in local bootstrap; SQL 018 needs the real schema.
  -- The disposable bootstrap must provide a positive price for this test.
  perform public.inventory_review_recipe_price_draft('22222222-2222-4222-8222-222222222222'::uuid);
@@ -51,6 +66,6 @@ begin
  exception when raise_exception then
    if sqlerrm='SECURITY FAILURE: approval succeeded without new price review' then raise; end if;
  end;
- raise notice 'PASS: approval persistence, recipe edit invalidation, nonadmin denial, stale price denial';
+ raise notice 'PASS: approval persistence, no-review denial, nonadmin review/approval denial, recipe edit invalidation, stale price denial';
 end $$;
 rollback;
