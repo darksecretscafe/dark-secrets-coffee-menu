@@ -26,8 +26,9 @@ export async function mountInventoryV16Dashboard(root, client) {
   const homeButton = el('button', 'Dashboard');
   const stockButton = el('button', 'Stock Master');
   const receiveButton = el('button', 'Receive Stock');
-  for (const b of [homeButton, stockButton, receiveButton]) b.type = 'button';
-  tabs.append(homeButton, stockButton, receiveButton);
+  const recipesButton = el('button', 'Recipes & Costing');
+  for (const b of [homeButton, stockButton, receiveButton, recipesButton]) b.type = 'button';
+  tabs.append(homeButton, stockButton, receiveButton, recipesButton);
   const status = el('p', 'Loading inventory…', 'status');
   status.setAttribute('role', 'status');
   const home = el('section');
@@ -135,20 +136,76 @@ export async function mountInventoryV16Dashboard(root, client) {
   historyScroll.append(historyTable);
   historyCard.append(historyScroll);
   receive.append(receiveCard, historyCard);
-  shell.append(heading, tabs, home, stock, receive, status);
+  const recipesSection = el('section');
+  recipesSection.hidden = true;
+  const recipeListCard = el('div', '', 'card');
+  recipeListCard.append(el('h2', 'Menu products · Recipe Status'));
+  const recipeSearch = el('input');
+  recipeSearch.placeholder = 'Search menu products';
+  const recipeFilter = el('select');
+  for (const [value, label] of [['all','All'],['no','No Recipe'],['draft','Draft'],['done','Completed']]) {
+    const option = el('option', label); option.value = value; recipeFilter.append(option);
+  }
+  const recipeControls = el('div', '', 'grid');
+  const searchLabel = el('label', 'Find product'); searchLabel.append(recipeSearch);
+  const filterLabel = el('label', 'Filter by Recipe Status'); filterLabel.append(recipeFilter);
+  recipeControls.append(searchLabel, filterLabel);
+  recipeListCard.append(recipeControls);
+  const recipeTable = el('table', '', 'compact');
+  const recipeHeader = el('thead');
+  const recipeHeadRow = el('tr');
+  for (const label of ['Menu product','Status','Action']) recipeHeadRow.append(el('th', label));
+  recipeHeader.append(recipeHeadRow);
+  const recipeBody = el('tbody');
+  recipeTable.append(recipeHeader, recipeBody);
+  const recipeScroll = el('div', '', 'scroll');
+  recipeScroll.append(recipeTable);
+  recipeListCard.append(recipeScroll);
+  const recipeEditor = el('div', '', 'card');
+  recipeEditor.hidden = true;
+  recipeEditor.append(el('h2', 'Recipe Management & Costing'));
+  const recipeSelected = el('p', 'Select a menu product.', 'muted');
+  const ingredientForm = el('form');
+  ingredientForm.className = 'grid';
+  const ingredientItem = el('select');
+  const ingredientLabel = el('label', 'Existing ingredient / packaging');
+  ingredientLabel.append(ingredientItem);
+  const ingredientQty = el('input');
+  ingredientQty.type = 'number'; ingredientQty.min = '0.0001'; ingredientQty.step = 'any';
+  const ingredientQtyLabel = el('label', 'Quantity per serving (base unit)');
+  ingredientQtyLabel.append(ingredientQty);
+  const addIngredient = el('button', 'Add selected ingredient'); addIngredient.type = 'submit';
+  ingredientForm.append(ingredientLabel, ingredientQtyLabel, addIngredient);
+  const ingredientRows = el('div', '', 'scroll');
+  const costing = el('section', 'Select a product to view costing.', 'costing-panel');
+  const finalize = el('div', '', 'finalize');
+  const saveRecipe = el('button', 'Save recipe'); saveRecipe.type = 'button';
+  const discardRecipe = el('button', 'Discard unsaved edits'); discardRecipe.type = 'button';
+  const reviewConfirmLabel = el('label', 'I checked the saved selling price and recipe costing');
+  const reviewConfirm = el('input'); reviewConfirm.type = 'checkbox';
+  reviewConfirmLabel.prepend(reviewConfirm);
+  const reviewPrice = el('button', 'Review saved menu price'); reviewPrice.type = 'button';
+  const approveRecipe = el('button', 'Approve recipe'); approveRecipe.type = 'button';
+  finalize.append(saveRecipe, discardRecipe, reviewConfirmLabel, reviewPrice, approveRecipe);
+  recipeEditor.append(recipeSelected, ingredientForm, ingredientRows, costing, finalize);
+  recipesSection.append(recipeListCard, recipeEditor);
+  shell.append(heading, tabs, home, stock, receive, recipesSection, status);
   root.replaceChildren(shell);
 
   function setSection(name) {
     home.hidden = name !== 'home';
     stock.hidden = name !== 'stock';
     receive.hidden = name !== 'receive';
+    recipesSection.hidden = name !== 'recipes';
     homeButton.setAttribute('aria-selected', String(name === 'home'));
     stockButton.setAttribute('aria-selected', String(name === 'stock'));
     receiveButton.setAttribute('aria-selected', String(name === 'receive'));
+    recipesButton.setAttribute('aria-selected', String(name === 'recipes'));
   }
   homeButton.addEventListener('click', () => setSection('home'));
   stockButton.addEventListener('click', () => setSection('stock'));
   receiveButton.addEventListener('click', () => setSection('receive'));
+  recipesButton.addEventListener('click', () => setSection('recipes'));
   openStock.addEventListener('click', () => setSection('stock'));
   function syncUnits() {
     const family = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[unit.value];
@@ -163,6 +220,10 @@ export async function mountInventoryV16Dashboard(root, client) {
   syncUnits();
   let pendingReceipt = null;
   let currentSnapshot = null;
+  let products = [];
+  let selectedProductId = null;
+  let draftLines = [];
+  let recipeDirty = false;
   function syncReceiveUnits() {
     const item = currentSnapshot?.items.find(i => i.id === receiveItem.value);
     receiveUnit.replaceChildren();
@@ -176,6 +237,138 @@ export async function mountInventoryV16Dashboard(root, client) {
     receiveUnit.value = item.preferred_purchase_unit;
   }
   receiveItem.addEventListener('change', syncReceiveUnits);
+  function recipeStatus(productId) {
+    const recipe = currentSnapshot?.recipes.find(r => r.product_id === productId);
+    if (!recipe) return 'no';
+    const p = calculateInventoryCosting(currentSnapshot, products).recipes.find(r => r.productId === productId);
+    return p?.approved ? 'done' : 'draft';
+  }
+  function showRecipeLines() {
+    ingredientRows.replaceChildren();
+    for (const [index, line] of draftLines.entries()) {
+      const row = el('div', '', 'actions');
+      row.append(el('span', line.name + ' — ' + line.quantityBase + ' ' + line.unit));
+      const remove = el('button', 'Remove'); remove.type = 'button';
+      remove.addEventListener('click', () => {
+        draftLines.splice(index, 1); recipeDirty = true; reviewConfirm.checked = false; showRecipeLines();
+      });
+      row.append(remove); ingredientRows.append(row);
+    }
+    if (!draftLines.length) ingredientRows.append(el('p', 'No ingredients added yet.', 'muted'));
+  }
+  function selectProduct(productId, discard = false) {
+    if (recipeDirty && !discard) {
+      status.textContent = 'Save or discard your unsaved recipe edits first.';
+      return;
+    }
+    selectedProductId = productId;
+    const product = products.find(p => p.id === productId);
+    const recipe = currentSnapshot?.recipes.find(r => r.product_id === productId);
+    const itemById = new Map((currentSnapshot?.items || []).map(i => [i.id, i]));
+    draftLines = (recipe ? currentSnapshot.recipeLines.filter(l => l.recipe_id === recipe.id) : []).map(l => {
+      const item = itemById.get(l.item_id);
+      if (!item) throw new Error('Saved recipe references an unknown inventory item');
+      return {itemId:item.id, quantityBase:Number(l.quantity_base), name:item.name, unit:item.base_unit};
+    });
+    recipeDirty = false; reviewConfirm.checked = false;
+    recipeEditor.hidden = !product;
+    recipeSelected.textContent = product ? product.name + ' — saved menu price ₱' + product.price : 'Select a menu product';
+    showRecipeLines();
+    showCosting();
+  }
+  function showCosting() {
+    const product = products.find(p => p.id === selectedProductId);
+    if (!product) { costing.textContent = 'Select a product to view costing.'; return; }
+    const projection = calculateInventoryCosting(currentSnapshot, products);
+    const balances = new Map(projection.balances.map(b => [b.itemId, b]));
+    const draftCost = draftLines.reduce((sum, line) => sum + line.quantityBase * Number(balances.get(line.itemId)?.wac ?? 0), 0);
+    const price = Number(product.price);
+    const margin = price > 0 ? (price - draftCost) / price * 100 : null;
+    costing.textContent = 'Recipe cost: ₱' + draftCost.toFixed(4) +
+      ' | Saved selling price: ₱' + price.toFixed(2) +
+      ' | Gross profit: ₱' + (price - draftCost).toFixed(4) +
+      ' | Margin: ' + (margin == null ? 'N/A' : margin.toFixed(2) + '%') +
+      (recipeDirty ? ' | UNSAVED EDITS' : '');
+  }
+  function renderRecipes() {
+    const query = recipeSearch.value.trim().toLowerCase();
+    const filter = recipeFilter.value;
+    recipeBody.replaceChildren();
+    const rows = products.filter(p => p.name.toLowerCase().includes(query))
+      .filter(p => filter === 'all' || recipeStatus(p.id) === filter);
+    const order = {no:0, draft:1, done:2};
+    rows.sort((a,b) => order[recipeStatus(a.id)] - order[recipeStatus(b.id)] || a.name.localeCompare(b.name));
+    for (const product of rows) {
+      const row = el('tr');
+      const state = recipeStatus(product.id);
+      row.append(el('td', product.name), el('td', {no:'No Recipe',draft:'Draft',done:'Completed'}[state]));
+      const actionCell = el('td');
+      const action = el('button', state === 'no' ? 'Create recipe' : 'Open recipe');
+      action.type = 'button';
+      action.addEventListener('click', () => selectProduct(product.id));
+      actionCell.append(action); row.append(actionCell); recipeBody.append(row);
+    }
+    if (!rows.length) {
+      const row = el('tr'); const cell = el('td', 'No matching menu products.'); cell.colSpan = 3;
+      row.append(cell); recipeBody.append(row);
+    }
+  }
+  recipeSearch.addEventListener('input', renderRecipes);
+  recipeFilter.addEventListener('change', renderRecipes);
+  ingredientForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const item = currentSnapshot?.items.find(i => i.id === ingredientItem.value && i.is_active);
+    const quantityBase = Number(ingredientQty.value);
+    if (!selectedProductId || !item || !Number.isFinite(quantityBase) || quantityBase <= 0 ||
+        draftLines.some(l => l.itemId === item.id)) {
+      status.textContent = 'Select a new ingredient with a valid positive quantity.';
+      return;
+    }
+    draftLines.push({itemId:item.id, quantityBase, name:item.name, unit:item.base_unit});
+    recipeDirty = true; reviewConfirm.checked = false; ingredientQty.value = '';
+    showRecipeLines(); showCosting();
+  });
+  discardRecipe.addEventListener('click', () => selectProduct(selectedProductId, true));
+  async function recipeMutation(method, payload, button) {
+    if (!selectedProductId || button.disabled) return;
+    button.disabled = true;
+    try {
+      const result = await controller[method](payload);
+      currentSnapshot = result.snapshot;
+      if (method === 'saveRecipe') {
+        recipeDirty = false;
+        selectProduct(selectedProductId, true);
+      } else {
+        reviewConfirm.checked = false;
+        showCosting();
+      }
+      renderRecipes();
+      status.textContent = method === 'approveRecipe' ? 'Recipe approval saved in Supabase.' :
+        method === 'reviewRecipePrice' ? 'Saved menu price reviewed in Supabase.' :
+        'Recipe saved and read back from Supabase.';
+    } catch (error) {
+      status.textContent = 'Action failed: ' + (error?.message || 'Unknown error');
+    } finally { button.disabled = false; }
+  }
+  saveRecipe.addEventListener('click', () => {
+    if (!selectedProductId || !draftLines.length) {
+      status.textContent = 'Select a product and add ingredients first.'; return;
+    }
+    recipeMutation('saveRecipe', {productId:selectedProductId,
+      lines:draftLines.map(l => ({itemId:l.itemId, quantityBase:l.quantityBase})), targetMarginPercent:null}, saveRecipe);
+  });
+  reviewPrice.addEventListener('click', () => {
+    if (recipeDirty || !reviewConfirm.checked) {
+      status.textContent = 'Save recipe changes and confirm the saved menu price first.'; return;
+    }
+    recipeMutation('reviewRecipePrice', selectedProductId, reviewPrice);
+  });
+  approveRecipe.addEventListener('click', () => {
+    if (recipeDirty || !reviewConfirm.checked) {
+      status.textContent = 'Save recipe changes and confirm the saved menu price before approval.'; return;
+    }
+    recipeMutation('approveRecipe', selectedProductId, approveRecipe);
+  });
   function render(snapshot) {
     currentSnapshot = snapshot;
     const projection = calculateInventoryCosting(snapshot, []);
@@ -204,6 +397,13 @@ export async function mountInventoryV16Dashboard(root, client) {
     }
     if (snapshot.items.some(i => i.id === selected && i.is_active)) receiveItem.value = selected;
     syncReceiveUnits();
+    ingredientItem.replaceChildren();
+    for (const item of snapshot.items.filter(i => i.is_active)) {
+      const option = el('option', item.name + ' (' + item.base_unit + ')');
+      option.value = item.id; ingredientItem.append(option);
+    }
+    renderRecipes();
+    if (selectedProductId && !recipeDirty) selectProduct(selectedProductId, true);
     const itemById = new Map(snapshot.items.map(i => [i.id, i]));
     historyBody.replaceChildren();
     const receipts = snapshot.movements.filter(m => m.movement_type === 'receive');
@@ -243,6 +443,9 @@ export async function mountInventoryV16Dashboard(root, client) {
   async function refresh() {
     const snapshot = await controller.refresh();
     if (!snapshot) throw new Error('Inventory refresh superseded');
+    const {data, error} = await client.from('products').select('id,name,price').order('name');
+    if (error) throw error;
+    products = Array.isArray(data) ? data : [];
     render(snapshot);
     return snapshot;
   }
