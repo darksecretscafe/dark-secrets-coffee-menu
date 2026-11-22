@@ -2,7 +2,7 @@
  * Existing admin auth, order lifecycle and customer site remain unchanged.
  * Backend is authoritative for RLS and admin RPC permissions.
  */
-import { mountInventoryPersistentAdminPanel } from './inventory-persistent-admin-panel-DRAFT.js';
+import { mountApprovedV16Inventory } from './inventory-v16-approved-live-controller.js';
 
 const tab = document.getElementById('tabInventory');
 const root = document.getElementById('inventoryPersistentRoot');
@@ -43,7 +43,7 @@ async function loadInventory() {
     const { data, error } = await client.auth.getUser();
     if (error) throw error;
     if (!data?.user) throw new Error('Sign in as an admin to access inventory.');
-    await mountInventoryPersistentAdminPanel(root, client);
+    await mountApprovedV16Inventory(root, client);
     // A sign-out may happen while the async mount is fetching records.
     if (requestedGeneration !== generation) return;
     const { data: afterMount, error: afterError } = await client.auth.getUser();
