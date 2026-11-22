@@ -72,7 +72,11 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const approveButton = el('button','Approve recipe');
   reviewButton.type='button';approveButton.type='button';
   const priceNote=el('p','Change and save selling prices in Menu Management before review.');
-  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,stockTitle,stockItem,qty,totalCost,reference,receiveButton,correctionTitle,correctionItem,correctionType,correctionQuantity,correctionValue,correctionReason,correctionButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,reviewButton,approveButton);
+  const priceConfirmation=el('input');priceConfirmation.type='checkbox';
+  const priceConfirmationLabel=el('label','I checked the saved menu price and recipe costing for this product');
+  priceConfirmationLabel.prepend(priceConfirmation);
+  const priceDetails=el('p','Select a product to inspect its saved price and costing.');
+  root.replaceChildren(title,status,refreshButton,table,costingTitle,costingTable,stockTitle,stockItem,qty,totalCost,reference,receiveButton,correctionTitle,correctionItem,correctionType,correctionQuantity,correctionValue,correctionReason,correctionButton,recipeTitle,productSelect,recipeEditTitle,ingredientItem,ingredientQty,addLineButton,draftLines,saveRecipeButton,priceNote,priceDetails,priceConfirmationLabel,reviewButton,approveButton);
   let products=[];
   async function loadProducts() {
     const { data,error }=await client.from('products').select('id,name,price');
@@ -107,6 +111,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     return true;
   }
   productSelect.addEventListener('change',()=>{
+    priceConfirmation.checked=false;
     if(loadSavedRecipe(productSelect.value))return;
     if(loadedRecipeProductId)productSelect.value=loadedRecipeProductId;
   });
@@ -120,6 +125,9 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const formatNumber=value=>Number.isFinite(value)?value.toFixed(4):'—';
   function renderCosting(snapshot){
     const projection=calculateInventoryCosting(snapshot,products);
+    const selectedProduct=products.find(p=>p.id===productSelect.value);
+    const selectedRecipe=projection.recipes.find(p=>p.productId===productSelect.value);
+    priceDetails.textContent=selectedProduct ? 'Saved selling price: '+String(selectedProduct.price)+' | Recipe cost: '+(selectedRecipe?selectedRecipe.cost.toFixed(4):'No recipe')+' | Margin: '+(selectedRecipe?.margin==null?'N/A':selectedRecipe.margin.toFixed(2)+'%') : 'Select a product';
     const balances=new Map(projection.balances.map(balance=>[balance.itemId,balance]));
     body.replaceChildren();
     stockItem.replaceChildren();ingredientItem.replaceChildren();correctionItem.replaceChildren();
@@ -157,6 +165,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       const snapshot=await controller.refresh();
       if(!snapshot)return;
       await loadProducts();
+      priceConfirmation.checked=false;
       const projection=renderCosting(snapshot);
       if(!recipeDirty)loadSavedRecipe(productSelect.value,true);
       status.textContent='Loaded '+snapshot.items.length+' inventory items and '+projection.recipes.length+' recipes from Supabase';
@@ -167,11 +176,14 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   }
   async function mutate(method) {
     if(!productSelect.value) {status.textContent='Select a product first';return;}
+    if(recipeDirty){status.textContent='Save or discard unsaved recipe edits before review or approval';return;}
+    if(method==='reviewRecipePrice'&&!priceConfirmation.checked){status.textContent='Inspect the saved price and costing, then tick the confirmation';return;}
     reviewButton.disabled=true;approveButton.disabled=true;
     try {
       const outcome=await controller[method](productSelect.value);
       status.textContent=(method==='approveRecipe'?'Recipe approved':'Saved menu price reviewed')+' in database';
       renderCosting(outcome.snapshot);
+      priceConfirmation.checked=false;
     }catch(error){status.textContent='Save failed: '+error.message;}
     finally{reviewButton.disabled=false;approveButton.disabled=false;}
   }
