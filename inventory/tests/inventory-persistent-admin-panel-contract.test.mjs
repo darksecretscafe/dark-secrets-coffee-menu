@@ -29,4 +29,8 @@ assert.match(source,/if\(recipeDirty\)\{status\.textContent='Save or discard uns
 assert.match(source,/priceConfirmation\.checked=false/,'Price confirmation resets');
 assert.match(source,/productSelect\.addEventListener\('change',[\s\S]*?if\(snapshot\)renderCosting\(snapshot\)/,'Price and margin refresh when product selection changes');
 assert.match(source,/recipeDirty=true;\s*priceConfirmation\.checked=false/,'Recipe edits invalidate price confirmation');
+assert.match(source,/Create inventory item/,'Inventory item creation UI');
+assert.match(source,/saveAction\('saveItem'/,'Item creation uses guarded persistence controller');
+assert.match(source,/g:\['g','kg'\],ml:\['ml','l'\],pcs:\['pcs'\]/,'Purchase unit follows base unit family');
+assert.match(source,/if\(method==='saveItem'\)/,'Item form clears only after confirmed save');
 console.log('PASS: draft UI purchase-unit mapping and receipt retry guard');
