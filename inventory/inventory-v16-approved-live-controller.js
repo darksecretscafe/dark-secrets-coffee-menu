@@ -5,6 +5,14 @@ import { calculateInventoryCosting } from './inventory-costing-snapshot-DRAFT.js
 // Mounts the original approved v16 HTML structure; no replacement layout or sample data.
 export async function mountApprovedV16Inventory(root, client) {
   const session = await createInventoryAdminSessionGateway(client);
+  const doc = root.ownerDocument;
+  if (!doc.querySelector('link[data-inventory-v16-style]')) {
+    const style = doc.createElement('link');
+    style.rel = 'stylesheet';
+    style.dataset.inventoryV16Style = 'true';
+    style.href = new URL('./inventory-v16-approved-style-WIP.css', import.meta.url).href;
+    doc.head.append(style);
+  }
   const controller = createInventoryPersistenceController(session);
   const response = await fetch(new URL('./inventory-v16-approved-live-template.html', import.meta.url));
   if (!response.ok) throw new Error('Approved v16 template could not load');
@@ -43,8 +51,8 @@ export async function mountApprovedV16Inventory(root, client) {
     button.addEventListener('click', () => showTab(button.dataset.tab || button.dataset.go)));
   const stockForm = $('stockForm');
   const updateUnits = () => {
-    const units = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[stockForm.elements.unit.value] || [];
-    const select = stockForm.elements.purchaseUnit;
+    const units = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[stockForm.elements.namedItem('unit').value] || [];
+    const select = stockForm.elements.namedItem('purchaseUnit');
     select.replaceChildren(...units.map(u => option(u,u)));
   };
   stockForm.elements.unit.addEventListener('change', updateUnits);
@@ -173,15 +181,15 @@ export async function mountApprovedV16Inventory(root, client) {
   stockForm.addEventListener('submit',async event=>{
     event.preventDefault();
     const f=stockForm.elements;
-    const minimumStock=Number(f.min.value);
-    if (!f.code.value.trim() || !f.category.value.trim() || !f.name.value.trim() ||
+    const minimumStock=Number(f.namedItem('min').value);
+    if (!f.namedItem('code').value.trim() || !f.namedItem('category').value.trim() || !f.namedItem('name').value.trim() ||
         !Number.isFinite(minimumStock) || minimumStock<0) return message('Enter valid stock item details.');
     const button=stockForm.querySelector('button[type="submit"],button:not([type])');
     button.disabled=true;
     try {
-      const result=await controller.saveItem({id:null,code:f.code.value.trim(),name:f.name.value.trim(),
-        category:f.category.value.trim(),type:f.type.value,baseUnit:f.unit.value,
-        purchaseUnit:f.purchaseUnit.value,minimumStock,active:true,supplier:f.supplier.value.trim()||null});
+      const result=await controller.saveItem({id:null,code:f.namedItem('code').value.trim(),name:f.namedItem('name').value.trim(),
+        category:f.namedItem('category').value.trim(),type:f.namedItem('type').value,baseUnit:f.namedItem('unit').value,
+        purchaseUnit:f.namedItem('purchaseUnit').value,minimumStock,active:true,supplier:f.namedItem('supplier').value.trim()||null});
       snapshot=result.snapshot;render();stockForm.reset();updateUnits();message('Stock item saved to Supabase.');
     } catch(e){message('Save failed: '+e.message);}finally{button.disabled=false;}
   });
