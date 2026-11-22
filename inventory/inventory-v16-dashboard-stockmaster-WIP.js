@@ -18,7 +18,8 @@ export async function mountInventoryV16Dashboard(root, client) {
     return node;
   };
   const shell = el('div', '', 'shell');
-  shell.id = 'inventoryV16';
+  const scope = el('div');
+  scope.id = 'inventoryV16';
   const heading = el('header');
   heading.append(el('h1', '☕ Dark Secrets Coffee'), el('p', 'Inventory Management', 'muted'));
   const tabs = el('nav', '', 'tabs');
@@ -190,7 +191,8 @@ export async function mountInventoryV16Dashboard(root, client) {
   recipeEditor.append(recipeSelected, ingredientForm, ingredientRows, costing, finalize);
   recipesSection.append(recipeListCard, recipeEditor);
   shell.append(heading, tabs, home, stock, receive, recipesSection, status);
-  root.replaceChildren(shell);
+  scope.append(shell);
+  root.replaceChildren(scope);
 
   function setSection(name) {
     home.hidden = name !== 'home';
@@ -366,6 +368,11 @@ export async function mountInventoryV16Dashboard(root, client) {
   approveRecipe.addEventListener('click', () => {
     if (recipeDirty || !reviewConfirm.checked) {
       status.textContent = 'Save recipe changes and confirm the saved menu price before approval.'; return;
+    }
+    const recipe = currentSnapshot?.recipes.find(r => r.product_id === selectedProductId);
+    if (!recipe || Number(recipe.price_review_revision) !== Number(recipe.recipe_revision) || !recipe.price_reviewed_at) {
+      status.textContent = 'Review the saved selling price for the current recipe revision before approval.';
+      return;
     }
     recipeMutation('approveRecipe', selectedProductId, approveRecipe);
   });
