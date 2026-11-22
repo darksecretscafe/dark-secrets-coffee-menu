@@ -16,6 +16,9 @@ on:
       - 'admin.html'
       - 'inventory/inventory-admin-tab-integration-DRAFT.js'
       - 'inventory/inventory-v16-dashboard-stockmaster-WIP.js'
+      - 'inventory/inventory-v16-approved-live-controller.js'
+      - 'inventory/inventory-v16-approved-live-template.html'
+      - 'inventory/tests/inventory-v16-approved-live-contract.test.mjs'
       - 'inventory/inventory-v16-approved-style-WIP.css'
       - 'inventory/tests/inventory-v16-live-integration-contract.test.mjs'
       - 'inventory/tests/inventory-admin-tab-integration.test.mjs'
@@ -66,6 +69,10 @@ jobs:
         run: node inventory/tests/inventory-rpc-pagination.test.mjs
       - name: Syntax-check v16 Supabase dashboard and stock master
         run: node --check inventory/inventory-v16-dashboard-stockmaster-WIP.js
+      - name: Syntax-check approved v16 LIVE controller
+        run: node --check inventory/inventory-v16-approved-live-controller.js
+      - name: Verify approved v16 template and Supabase wiring
+        run: node --test inventory/tests/inventory-v16-approved-live-contract.test.mjs
       - name: Verify v16 live integration source contract
         run: node --test inventory/tests/inventory-v16-live-integration-contract.test.mjs
       - name: Test admin inventory tab integration
