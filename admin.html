@@ -140,6 +140,7 @@
 <button type="button" id="tabCancellations" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelCancellations">Cancellations <span id="tabCancellationCount" class="ds-cancellation-badge" aria-label="Pending cancellation requests" hidden></span></button>
 <button type="button" id="tabRefunds" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelRefunds">Refunds <span id="tabRefundCount" class="ds-refund-badge" hidden></span></button>
 <button type="button" id="tabProducts" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelProducts">Products</button>
+<button type="button" id="tabInventory" class="ds-tab" role="tab" aria-selected="false" aria-controls="panelInventory">Inventory</button>
 </nav>
 <section id="panelActive" class="ds-tab-panel" role="tabpanel" aria-labelledby="tabActive">
 <div class="filters">
@@ -200,13 +201,16 @@
 <div id="categoryManagement"></div>
 <div id="productsList"></div>
 </section>
+<section id="panelInventory" class="ds-tab-panel" role="tabpanel" aria-labelledby="tabInventory" hidden>
+<div id="inventoryPersistentRoot" class="panel"><p role="status">Select Inventory to load your saved inventory.</p></div>
+</section>
 <p id="message" role="status" aria-live="polite"></p>
 <footer>Admin access only</footer>
 </main>
 
 <script>
 (() => {
- const names=['Active','History','Cancellations','Refunds','Products'];
+ const names=['Active','History','Cancellations','Refunds','Products','Inventory'];
  function selectTab(name){
   if(!names.includes(name))return;
   for(const item of names){
@@ -264,6 +268,7 @@
 <script src="admin-cancellation.js?v=4"></script>
 <script src="admin-refunds.js?v=76"></script>
 <script src="admin-products.js?v=14"></script>
+<script type="module" src="inventory/inventory-admin-tab-integration-DRAFT.js"></script>
 
 <script>
 if ('serviceWorker' in navigator) {
