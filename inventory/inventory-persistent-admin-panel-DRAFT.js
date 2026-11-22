@@ -54,13 +54,15 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
   const draftLines=el('ul');
   const saveRecipeButton=el('button','Save recipe draft');saveRecipeButton.type='button';
   let lines=[];
+  let recipeDirty=false;
+  let loadedRecipeProductId=null;
   let pendingReceipt=null;
   const renderLines=()=>{
     draftLines.replaceChildren();
     for(const [index,line] of lines.entries()){
       const li=el('li',line.name+' — '+line.quantityBase+' '+line.unit+' ');
       const remove=el('button','Remove');remove.type='button';
-      remove.addEventListener('click',()=>{lines.splice(index,1);renderLines();});
+      remove.addEventListener('click',()=>{lines.splice(index,1);recipeDirty=true;renderLines();});
       li.append(remove);draftLines.append(li);
     }
   };
@@ -76,13 +78,45 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     const { data,error }=await client.from('products').select('id,name,price');
     if(error)throw error;
     products=Array.isArray(data)?data:[];
+    const previousSelection=productSelect.value;
     productSelect.replaceChildren();
     for(const product of products) {
       const option=el('option',product.name+' — '+String(product.price??'No price'));
       option.value=product.id;
       productSelect.append(option);
     }
+    if(products.some(product=>product.id===previousSelection))productSelect.value=previousSelection;
   }
+  function loadSavedRecipe(productId,force=false){
+    if(recipeDirty&&!force){
+      status.textContent='Unsaved recipe edits: save them or discard before changing product';
+      return false;
+    }
+    const snapshot=controller.current();
+    if(!snapshot)return false;
+    const recipe=snapshot.recipes.find(row=>row.product_id===productId);
+    const itemById=new Map(snapshot.items.map(item=>[item.id,item]));
+    lines=(recipe?snapshot.recipeLines.filter(line=>line.recipe_id===recipe.id):[]).map(line=>{
+      const item=itemById.get(line.item_id);
+      if(!item)throw new Error('Saved recipe references missing inventory item');
+      return {itemId:item.id,quantityBase:Number(line.quantity_base),name:item.name,unit:item.base_unit};
+    });
+    loadedRecipeProductId=productId;
+    recipeDirty=false;
+    renderLines();
+    return true;
+  }
+  productSelect.addEventListener('change',()=>{
+    if(loadSavedRecipe(productSelect.value))return;
+    if(loadedRecipeProductId)productSelect.value=loadedRecipeProductId;
+  });
+  const discardRecipeButton=el('button','Discard unsaved recipe edits');
+  discardRecipeButton.type='button';
+  discardRecipeButton.addEventListener('click',()=>{
+    loadSavedRecipe(productSelect.value,true);
+    status.textContent='Saved recipe restored from latest loaded snapshot';
+  });
+  root.insertBefore(discardRecipeButton,saveRecipeButton.nextSibling);
   const formatNumber=value=>Number.isFinite(value)?value.toFixed(4):'—';
   function renderCosting(snapshot){
     const projection=calculateInventoryCosting(snapshot,products);
@@ -124,6 +158,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       if(!snapshot)return;
       await loadProducts();
       const projection=renderCosting(snapshot);
+      if(!recipeDirty)loadSavedRecipe(productSelect.value,true);
       status.textContent='Loaded '+snapshot.items.length+' inventory items and '+projection.recipes.length+' recipes from Supabase';
     } catch(error) {
       status.textContent='Refresh failed: '+error.message;
@@ -146,6 +181,7 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
     if(!item||!Number.isFinite(amount)||amount<=0){status.textContent='Select an ingredient and positive quantity';return;}
     if(lines.some(x=>x.itemId===item.id)){status.textContent='Ingredient already added';return;}
     lines.push({itemId:item.id,quantityBase:amount,name:item.name,unit:item.base_unit});
+    recipeDirty=true;
     renderLines();ingredientQty.value='';
   });
   async function saveAction(method,payload,button){
@@ -154,14 +190,14 @@ export async function mountInventoryPersistentAdminPanel(root, client) {
       const {snapshot}=await controller[method](payload);
       renderCosting(snapshot);
       status.textContent='Saved successfully to database. '+snapshot.items.length+' items refreshed.';
-      if(method==='saveRecipe'){lines=[];renderLines();}
+      if(method==='saveRecipe'){recipeDirty=false;loadSavedRecipe(productSelect.value,true);}
       if(method==='receive'){pendingReceipt=null;qty.value='';totalCost.value='';reference.value='';}
       if(method==='correct'){pendingCorrection=null;correctionQuantity.value='';correctionValue.value='';correctionReason.value='';}
     }catch(error){status.textContent='Save failed: '+error.message;}
     finally{button.disabled=false;}
   }
   saveRecipeButton.addEventListener('click',()=>{
-    if(!productSelect.value||!lines.length){status.textContent='Select product and add ingredients first';return;}
+    if(!productSelect.value||!lines.length||loadedRecipeProductId!==productSelect.value){status.textContent='Select product and add ingredients first';return;}
     saveAction('saveRecipe',{productId:productSelect.value,lines:lines.map(({itemId,quantityBase})=>({itemId,quantityBase})),targetMarginPercent:null},saveRecipeButton);
   });
   receiveButton.addEventListener('click',()=>{
