@@ -168,19 +168,34 @@ export async function mountApprovedV16Inventory(root, client) {
     page = Math.min(page,maxPage);
     $('productRows').replaceChildren();
     for (const p of filtered.slice(page*pageSize,(page+1)*pageSize)) {
-      const tr = row([p.name,status[recipeState(p.id)]]);
-      const cell = el('td');
-      const button = el('button',recipeState(p.id)==='no'?'Create recipe':'Open recipe');
+      const tr=el('tr');
+      tr.append(el('td',p.name));
+      const statusCell=el('td');
+      const state=recipeState(p.id);
+      const pill=el('span',status[state]);pill.className='pill '+(state==='done'?'done':state==='draft'?'draft':'');
+      statusCell.append(pill);tr.append(statusCell);
+      const cell=el('td');
+      const button=el('button',state==='no'?'Select':state==='draft'?'Continue':'View');
       button.type='button';
       button.addEventListener('click',()=>selectProduct(p.id));
       cell.append(button);tr.append(cell);$('productRows').append(tr);
     }
-    $('pageInfo').textContent = filtered.length ? 'Showing ' + (page*pageSize+1) +
-      '–' + Math.min(filtered.length,(page+1)*pageSize) + ' of ' + filtered.length : 'No matching products';
+    const pages=maxPage+1;
+    $('pageInfo').textContent=filtered.length?'Showing '+(page*pageSize+1)+'–'+
+      Math.min(filtered.length,(page+1)*pageSize)+' of '+filtered.length+
+      ' · Page '+(page+1)+'/'+pages:'No matching products';
     $('prevPage').disabled = page === 0;
     $('nextPage').disabled = page >= maxPage;
-    $('recipeSummary').textContent = products.length + ' menu products · ' +
-      products.filter(p=>recipeState(p.id)==='no').length + ' without recipe';
+    $('recipeSummary').replaceChildren();
+    for(const [label,count] of [
+      ['All',products.length],
+      ['No Recipe',products.filter(p=>recipeState(p.id)==='no').length],
+      ['Draft',products.filter(p=>recipeState(p.id)==='draft').length],
+      ['Completed',products.filter(p=>recipeState(p.id)==='done').length]
+    ]) {
+      const badge=el('span');badge.append(el('strong',label+': '+count));
+      $('recipeSummary').append(badge);
+    }
   };
   $('productSearch').addEventListener('input',()=>{page=0;renderProducts();});
   $('recipeFilter').addEventListener('change',()=>{page=0;renderProducts();});
