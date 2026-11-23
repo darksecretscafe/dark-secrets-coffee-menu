@@ -5,18 +5,12 @@ import { calculateInventoryCosting } from './inventory-costing-snapshot-DRAFT.js
 // Mounts the original approved v16 HTML structure; no replacement layout or sample data.
 export async function mountApprovedV16Inventory(root, client) {
   const session = await createInventoryAdminSessionGateway(client);
-  // Legacy admin.css .panel has max-width:470px; remove it only from Inventory.
-  root.classList.remove('panel');
-  root.style.width = '100%';
-  root.style.maxWidth = 'none';
-  root.style.margin = '0';
-  root.style.padding = '0';
   const doc = root.ownerDocument;
   if (!doc.querySelector('link[data-inventory-v16-style]')) {
     const style = doc.createElement('link');
     style.rel = 'stylesheet';
     style.dataset.inventoryV16Style = 'true';
-    style.href = new URL('./inventory-v16-approved-style-WIP.css?v=20261123-layout2', import.meta.url).href;
+    style.href = new URL('./inventory-v16-approved-style-WIP.css', import.meta.url).href;
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
@@ -86,14 +80,64 @@ export async function mountApprovedV16Inventory(root, client) {
     if (!product) return;
     const cost = lines.reduce((sum,l) => sum + l.quantityBase * costFor(l.itemId),0);
     const price = num(product.price);
-    const margin = price > 0 ? ((price - cost) / price * 100).toFixed(2) + '%' : 'N/A';
-    $('estimate').textContent = 'Recipe cost ₱' + money(cost) + ' · Saved menu price ₱' +
-      price.toFixed(2) + ' · Gross profit ₱' + money(price - cost) + ' · Margin ' + margin +
-      (dirty ? ' · Unsaved changes' : '');
+    const profit = price - cost;
+    const margin = price > 0 ? profit / price * 100 : null;
+    const costPercent = price > 0 ? cost / price * 100 : null;
+    const estimate = $('estimate');
+    estimate.replaceChildren();
+    const heading = el('div'); heading.className='costing-heading';
+    const headingText=el('strong','RECIPE COSTING OVERVIEW');
+    const tag=el('span',dirty?'Unsaved changes':'LIVE COSTING');tag.className='costing-tag';
+    heading.append(headingText,tag);estimate.append(heading);
+    const grid=el('div');grid.className='costing-grid';
+    const tile=(label,value,highlight=false)=>{
+      const box=el('div');box.className='costing-tile'+(highlight?' profit':'');
+      box.append(el('small',label),el('strong',value));grid.append(box);
+    };
+    tile('Recipe Cost','₱'+money(cost));
+    tile('Current Menu Price','₱'+money(price));
+    tile('Proposed Selling Price','₱'+money(price),true);
+    tile('Gross Profit','₱'+money(profit));
+    tile('Recipe Cost %',costPercent===null?'—':costPercent.toFixed(1)+'%');
+    tile('Recipe Gross Margin',margin===null?'—':margin.toFixed(1)+'%');
+    estimate.append(grid);
+    const controls=el('div');controls.className='price-controls';
+    const priceLabel=el('label','Set your preferred selling price (₱)');
+    const proposed=el('input');proposed.type='number';proposed.min='0.01';proposed.step='0.01';proposed.value=price.toFixed(2);
+    proposed.id='customPriceInput';priceLabel.append(proposed);
+    const review=el('button','Review in Menu Management');review.type='button';review.id='applyCustomPrice';
+    review.addEventListener('click',()=>{
+      const desired=Number(proposed.value);
+      if(!Number.isFinite(desired)||desired<=0) return message('Enter a valid proposed selling price.');
+      message('Current menu price is ₱'+money(price)+'. To change it to ₱'+money(desired)+
+        ', use the existing Products tab in Menu Management, save the new price, then return here and refresh. Inventory does not change menu prices.');
+    });
+    const reset=el('button','Reset Proposal');reset.type='button';reset.id='resetCustomPrice';
+    reset.addEventListener('click',()=>{proposed.value=price.toFixed(2);});
+    controls.append(priceLabel,review,reset);estimate.append(controls);
+    const bottom=el('div');bottom.className='costing-bottom';
+    bottom.append(el('span','Recipe costing is calculated from ingredients and selling price.'));
+    const marginBox=el('span');marginBox.className='target-box '+(margin===null?'unknown':margin<=0?'low':'good');
+    marginBox.append(el('strong','Recipe Gross Margin: '+(margin===null?'—':margin.toFixed(1)+'%')));
+    bottom.append(marginBox);estimate.append(bottom);
+    const note=el('p','Recipe-level figures exclude operating expenses and other unallocated costs. Menu prices are only edited in Menu Management.');
+    note.className='costing-footnote';estimate.append(note);
     $('priceDetails').textContent = 'Saved menu price: ₱' + price.toFixed(2) +
       ' · Recipe revision: ' + (recipe(selectedId)?.recipe_revision ?? 'Not saved');
-    $('readiness').textContent = dirty ? 'Unsaved recipe' : recipe(selectedId) ? 'Saved recipe' : 'New recipe';
-    $('requirements').textContent = lines.length ? lines.length + ' ingredient(s) selected' : 'Add ingredients to proceed';
+    const saved=recipe(selectedId);
+    const checks=[
+      ['Ingredients & quantities',lines.length>0 && !dirty],
+      ['Ingredient costs available',lines.length>0 && lines.every(l=>num(balances().get(l.itemId)?.quantity)>0 && costFor(l.itemId)>=0)],
+      ['Selling price available',price>0],
+      ['Costing reviewed',!!saved?.price_reviewed_at && saved?.price_review_revision===saved?.recipe_revision]
+    ];
+    $('readiness').textContent=checks.filter(x=>x[1]).length+' of 4 ready';
+    $('requirements').replaceChildren(...checks.map(([label,ok])=>{
+      const box=el('div',(ok?'✓ ':'○ ')+label);box.className='requirement '+(ok?'ok':'wait');return box;
+    }));
+    $('complete').textContent='Save Recipe';
+    $('complete').disabled=!dirty;
+
   };
   const selectProduct = (id, force = false) => {
     if (dirty && !force) { message('Save or discard unsaved recipe changes before switching products.'); return; }
@@ -124,19 +168,34 @@ export async function mountApprovedV16Inventory(root, client) {
     page = Math.min(page,maxPage);
     $('productRows').replaceChildren();
     for (const p of filtered.slice(page*pageSize,(page+1)*pageSize)) {
-      const tr = row([p.name,status[recipeState(p.id)]]);
-      const cell = el('td');
-      const button = el('button',recipeState(p.id)==='no'?'Create recipe':'Open recipe');
+      const tr=el('tr');
+      tr.append(el('td',p.name));
+      const statusCell=el('td');
+      const state=recipeState(p.id);
+      const pill=el('span',status[state]);pill.className='pill '+(state==='done'?'done':state==='draft'?'draft':'');
+      statusCell.append(pill);tr.append(statusCell);
+      const cell=el('td');
+      const button=el('button',state==='no'?'Select':state==='draft'?'Continue':'View');
       button.type='button';
       button.addEventListener('click',()=>selectProduct(p.id));
       cell.append(button);tr.append(cell);$('productRows').append(tr);
     }
-    $('pageInfo').textContent = filtered.length ? 'Showing ' + (page*pageSize+1) +
-      '–' + Math.min(filtered.length,(page+1)*pageSize) + ' of ' + filtered.length : 'No matching products';
+    const pages=maxPage+1;
+    $('pageInfo').textContent=filtered.length?'Showing '+(page*pageSize+1)+'–'+
+      Math.min(filtered.length,(page+1)*pageSize)+' of '+filtered.length+
+      ' · Page '+(page+1)+'/'+pages:'No matching products';
     $('prevPage').disabled = page === 0;
     $('nextPage').disabled = page >= maxPage;
-    $('recipeSummary').textContent = products.length + ' menu products · ' +
-      products.filter(p=>recipeState(p.id)==='no').length + ' without recipe';
+    $('recipeSummary').replaceChildren();
+    for(const [label,count] of [
+      ['All',products.length],
+      ['No Recipe',products.filter(p=>recipeState(p.id)==='no').length],
+      ['Draft',products.filter(p=>recipeState(p.id)==='draft').length],
+      ['Completed',products.filter(p=>recipeState(p.id)==='done').length]
+    ]) {
+      const badge=el('span');badge.append(el('strong',label+': '+count));
+      $('recipeSummary').append(badge);
+    }
   };
   $('productSearch').addEventListener('input',()=>{page=0;renderProducts();});
   $('recipeFilter').addEventListener('change',()=>{page=0;renderProducts();});
