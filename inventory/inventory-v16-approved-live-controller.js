@@ -56,7 +56,7 @@ export async function mountApprovedV16Inventory(root, client) {
   const stockForm = $('stockForm');
   const syncReceiveUnit = () => {
     const item = findItem($('receiveItem').value);
-    $('purchaseUnit').replaceChildren(...(item ? [option(item.preferred_purchase_unit,item.preferred_purchase_unit)] : []));
+    $('receiveQuantityUnit').textContent = item ? '(' + item.base_unit + ')' : '(select stock item)';
   };
   $('receiveItem').addEventListener('change', syncReceiveUnit);
   const costFor = id => num(balances().get(id)?.wac);
@@ -371,7 +371,7 @@ export async function mountApprovedV16Inventory(root, client) {
       totalCost=Number($('receiveCost').value),reference=$('reference').value.trim();
     if (!item || !Number.isFinite(quantity)||quantity<=0||!Number.isFinite(totalCost)||
         totalCost<0||!reference) return message('Enter valid receipt details.');
-    const payload={itemId:item.id,quantity,unit:$('purchaseUnit').value,totalCost,reference};
+    const payload={itemId:item.id,quantity,unit:item.base_unit,totalCost,reference};
     const fingerprint=JSON.stringify(payload);
     if(pendingReceipt && pendingReceipt.fingerprint!==fingerprint)
       return message('Uncertain prior receipt. Retry same values or reconcile stock before another transaction.');
