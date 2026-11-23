@@ -133,9 +133,15 @@ export async function mountApprovedV16Inventory(root, client) {
     const review=el('button','Review in Menu Management');review.type='button';review.id='applyCustomPrice';
     review.addEventListener('click',()=>{
       const desired=Number(proposed.value);
-      if(!Number.isFinite(desired)||desired<=0) return message('Enter a valid proposed selling price.');
-      message('Current menu price is ₱'+money(price)+'. To change it to ₱'+money(desired)+
-        ', use the existing Products tab in Menu Management, save the new price, then return here and refresh. Inventory does not change menu prices.');
+      if(!Number.isFinite(desired)||desired<=0||desired>99999.99)
+        return message('Enter a valid proposed selling price (₱0.01–₱99,999.99).');
+      const tab=doc.getElementById('tabProducts');
+      if(!tab || typeof doc.defaultView?.DS_selectAdminTab!=='function')
+        return message('Menu Management is unavailable. No price was changed.');
+      doc.defaultView.DS_selectAdminTab('Products');
+      doc.defaultView.dispatchEvent(new CustomEvent('ds:inventory-price-review',{
+        detail:{productId:String(selectedId),proposedPrice:desired}
+      }));
     });
     const reset=el('button','Reset Proposal');reset.type='button';reset.id='resetCustomPrice';
     reset.addEventListener('click',()=>{proposed.value=price.toFixed(2);});
@@ -346,6 +352,15 @@ export async function mountApprovedV16Inventory(root, client) {
        Number(r.price_review_revision)!==Number(r.recipe_revision))
       return message('Save the recipe and review its current saved price before approval.');
     mutate('approveRecipe',selectedId,$('approveRecipe'));
+  });
+  doc.defaultView?.addEventListener('ds:inventory-price-saved',async event=>{
+    if(String(event.detail?.productId)!==String(selectedId)) return;
+    try{
+      await refresh();
+      showTab('recipes');
+      selectProduct(selectedId,true);
+      message('Menu price saved. Review the updated recipe costing, then confirm the saved price before recipe approval.');
+    }catch(error){message('Menu price saved, but Inventory refresh failed: '+error.message);}
   });
   await refresh();
   return Object.freeze({refresh,controller});
