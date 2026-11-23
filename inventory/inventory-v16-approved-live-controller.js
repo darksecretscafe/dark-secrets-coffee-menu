@@ -82,13 +82,13 @@ export async function mountApprovedV16Inventory(root, client) {
       const cell = el('td');
       const remove = el('button','Remove'); remove.type = 'button'; remove.className = 'secondary';
       remove.addEventListener('click', () => {
-        lines.splice(index,1); dirty = true; $('priceConfirmed').checked = false; showLines();
+        lines.splice(index,1); dirty = true; showLines();
       });
       const edit = el('button','Edit');edit.type='button';edit.className='secondary';
       edit.addEventListener('click',()=>{
         $('recipeItem').value=String(line.itemId);
         $('recipeQty').value=String(line.quantityBase);
-        lines.splice(index,1);dirty=true;$('priceConfirmed').checked=false;showLines();
+        lines.splice(index,1);dirty=true;showLines();
         $('recipeQty').focus();guideNextStep();
         message('Edit quantity, then click Add selected ingredient to update this line.');
       });
@@ -175,7 +175,7 @@ export async function mountApprovedV16Inventory(root, client) {
       return {itemId:l.item_id,quantityBase:num(l.quantity_base)};
     });
     dirty = false;
-    $('priceConfirmed').checked = false;
+   
     $('recipeEditor').hidden = false;
     $('priceApproval').hidden = $('recipes').hidden;
     $('selected').textContent = 'Selected: '+product.name+' · Product ID: '+product.id;
@@ -391,7 +391,7 @@ export async function mountApprovedV16Inventory(root, client) {
     if(!selectedId||!item||!item.is_active||!Number.isFinite(quantityBase)||quantityBase<=0||
        lines.some(l=>l.itemId===item.id))return message('Select a new ingredient and positive quantity.');
     lines.push({itemId:item.id,quantityBase});
-    dirty=true;$('priceConfirmed').checked=false;$('recipeQty').value='';showLines();
+    dirty=true;$('recipeQty').value='';showLines();
   });
   const mutate = async (method,payload,button) => {
     button.disabled=true;
@@ -399,7 +399,7 @@ export async function mountApprovedV16Inventory(root, client) {
       const result=await controller[method](payload);
       snapshot=result.snapshot;
       if(method==='saveRecipe'){dirty=false;selectProduct(selectedId,true);}
-      else $('priceConfirmed').checked=false;
+      else
       render();
       message(method==='saveRecipe'?'Recipe saved to Supabase.':
         method==='reviewRecipePrice'?'Saved price reviewed.':'Recipe approved.');
@@ -410,12 +410,12 @@ export async function mountApprovedV16Inventory(root, client) {
     mutate('saveRecipe',{productId:selectedId,lines:lines.map(l=>({...l})),targetMarginPercent:null},$('complete'));
   });
   $('reviewPrice').addEventListener('click',()=>{
-    if(dirty||!$('priceConfirmed').checked)return message('Save changes and confirm the saved price first.');
+    if(dirty||!recipe(selectedId))return message('Save changes and confirm the saved price first.');
     mutate('reviewRecipePrice',selectedId,$('reviewPrice'));
   });
   $('approveRecipe').addEventListener('click',()=>{
     const r=recipe(selectedId);
-    if(dirty||!$('priceConfirmed').checked||!r||!r.price_reviewed_at||
+    if(dirty||!r||!r.price_reviewed_at||
        Number(r.price_review_revision)!==Number(r.recipe_revision))
       return message('Save the recipe and review its current saved price before approval.');
     mutate('approveRecipe',selectedId,$('approveRecipe'));
