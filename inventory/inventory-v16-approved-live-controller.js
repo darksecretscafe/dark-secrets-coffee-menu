@@ -432,7 +432,7 @@ export async function mountApprovedV16Inventory(root, client) {
         message('Recipe approved in Supabase.');
       }
     }catch(e){message('Review / approval failed: '+e.message);}
-    finally{button.disabled=false;showLines();}
+    finally{showLines();}
   });
   doc.defaultView?.addEventListener('ds:inventory-price-saved',async event=>{
     if(String(event.detail?.productId)!==String(selectedId)) return;
