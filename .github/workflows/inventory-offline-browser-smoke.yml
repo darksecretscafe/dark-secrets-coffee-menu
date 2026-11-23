@@ -46,6 +46,14 @@ jobs:
         run: npx playwright test inventory/tests/inventory-readonly-preview-browser.test.mjs inventory/tests/inventory-persistent-admin-panel-browser.test.mjs inventory/tests/inventory-v16-approved-browser.test.mjs
         env:
           CI: 'true'
+      - name: Upload approved v16 desktop screenshot for visual comparison
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: approved-v16-integrated-desktop-screenshot
+          path: test-results/approved-v16-desktop.png
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload failure evidence
         if: failure()
         uses: actions/upload-artifact@v4
