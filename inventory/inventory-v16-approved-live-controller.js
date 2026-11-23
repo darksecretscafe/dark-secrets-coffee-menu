@@ -5,12 +5,14 @@ import { calculateInventoryCosting } from './inventory-costing-snapshot-DRAFT.js
 // Mounts the original approved v16 HTML structure; no replacement layout or sample data.
 export async function mountApprovedV16Inventory(root, client) {
   const session = await createInventoryAdminSessionGateway(client);
+  root.classList.remove('panel');
+  root.style.width='100%';root.style.maxWidth='none';root.style.margin='0';root.style.padding='0';
   const doc = root.ownerDocument;
   if (!doc.querySelector('link[data-inventory-v16-style]')) {
     const style = doc.createElement('link');
     style.rel = 'stylesheet';
     style.dataset.inventoryV16Style = 'true';
-    style.href = new URL('./inventory-v16-approved-style-WIP.css', import.meta.url).href;
+    style.href = new URL('./inventory-v16-approved-style-WIP.css?v=20261123-guided2', import.meta.url).href;
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
