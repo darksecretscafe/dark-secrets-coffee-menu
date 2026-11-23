@@ -2,7 +2,7 @@
  * Existing admin auth, order lifecycle and customer site remain unchanged.
  * Backend is authoritative for RLS and admin RPC permissions.
  */
-import { mountApprovedV16Inventory } from './inventory-v16-approved-live-controller.js?v=20261123-history-unit';
+import { mountApprovedV16Inventory } from './inventory-v16-approved-live-controller.js?v=20261123-receive-search';
 
 const tab = document.getElementById('tabInventory');
 const root = document.getElementById('inventoryPersistentRoot');
