@@ -5,15 +5,12 @@ import { calculateInventoryCosting } from './inventory-costing-snapshot-DRAFT.js
 // Mounts the original approved v16 HTML structure; no replacement layout or sample data.
 export async function mountApprovedV16Inventory(root, client) {
   const session = await createInventoryAdminSessionGateway(client);
-  // Legacy admin.css .panel constrains the content to 470px; inventory must be full width.
-  root.classList.remove('panel');
-  root.style.width='100%';root.style.maxWidth='none';root.style.margin='0';root.style.padding='0';
   const doc = root.ownerDocument;
   if (!doc.querySelector('link[data-inventory-v16-style]')) {
     const style = doc.createElement('link');
     style.rel = 'stylesheet';
     style.dataset.inventoryV16Style = 'true';
-    style.href = new URL('./inventory-v16-approved-style-WIP.css?v=20261123-approved-live', import.meta.url).href;
+    style.href = new URL('./inventory-v16-approved-style-WIP.css', import.meta.url).href;
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
@@ -36,7 +33,7 @@ export async function mountApprovedV16Inventory(root, client) {
   const money = value => num(value).toFixed(4);
   let snapshot, products = [], selectedId = null, lines = [], dirty = false, page = 0;
   let pendingReceipt = null;
-  const pageSize = 12;
+  const pageSize = 5;
   const findItem = id => snapshot?.items.find(i => i.id === id);
   const projection = () => calculateInventoryCosting(snapshot, products);
   const balances = () => new Map(projection().balances.map(b => [b.itemId, b]));
@@ -48,6 +45,7 @@ export async function mountApprovedV16Inventory(root, client) {
   const showTab = name => {
     for (const key of ['home','stock','receive','recipes']) $(key).hidden = key !== name;
     for (const button of scope.querySelectorAll('[data-tab]')) button.setAttribute('aria-selected', String(button.dataset.tab === name));
+    if (name === 'recipes') queueMicrotask(()=>guideNextStep());
     $('priceApproval').hidden = name !== 'recipes' || !selectedId;
   };
   scope.querySelectorAll('[data-tab],[data-go]').forEach(button =>
@@ -66,6 +64,22 @@ export async function mountApprovedV16Inventory(root, client) {
   };
   $('receiveItem').addEventListener('change', syncReceiveUnit);
   const costFor = id => num(balances().get(id)?.wac);
+  const guideNextStep = () => {
+    scope.querySelectorAll('.ds-guide-glow').forEach(node=>node.classList.remove('ds-guide-glow'));
+    let next = null;
+    if ($('recipes').hidden) return;
+    if (!selectedId) next = $('productRows').querySelector('button');
+    else if (!lines.length) next = $('recipeItem');
+    else if (dirty) next = $('complete');
+    else {
+      const r=recipe(selectedId);
+      if (!r?.price_reviewed_at || Number(r.price_review_revision)!==Number(r.recipe_revision))
+        next = $('reviewPrice');
+      else if (Number(r.approved_revision)!==Number(r.recipe_revision))
+        next = $('approveRecipe');
+    }
+    if (next && !next.disabled) next.classList.add('ds-guide-glow');
+  };
   const showLines = () => {
     $('lines').replaceChildren();
     for (const [index,line] of lines.entries()) {
@@ -77,7 +91,15 @@ export async function mountApprovedV16Inventory(root, client) {
       remove.addEventListener('click', () => {
         lines.splice(index,1); dirty = true; $('priceConfirmed').checked = false; showLines();
       });
-      cell.append(remove); tr.append(cell); $('lines').append(tr);
+      const edit = el('button','Edit');edit.type='button';edit.className='secondary';
+      edit.addEventListener('click',()=>{
+        $('recipeItem').value=String(line.itemId);
+        $('recipeQty').value=String(line.quantityBase);
+        lines.splice(index,1);dirty=true;$('priceConfirmed').checked=false;showLines();
+        $('recipeQty').focus();guideNextStep();
+        message('Edit quantity, then click Add selected ingredient to update this line.');
+      });
+      cell.append(edit,remove); tr.append(cell); $('lines').append(tr);
     }
     const product = products.find(p => p.id === selectedId);
     if (!product) return;
@@ -140,6 +162,7 @@ export async function mountApprovedV16Inventory(root, client) {
     }));
     $('complete').textContent='Save Recipe';
     $('complete').disabled=!dirty;
+    guideNextStep();
 
   };
   const selectProduct = (id, force = false) => {
@@ -156,7 +179,7 @@ export async function mountApprovedV16Inventory(root, client) {
     $('priceConfirmed').checked = false;
     $('recipeEditor').hidden = false;
     $('priceApproval').hidden = $('recipes').hidden;
-    $('selected').textContent = product.name + ' · ₱' + num(product.price).toFixed(2);
+    $('selected').textContent = 'Selected: '+product.name+' · Product ID: '+product.id;
     showLines();
   };
   const renderProducts = () => {
@@ -200,8 +223,8 @@ export async function mountApprovedV16Inventory(root, client) {
       $('recipeSummary').append(badge);
     }
   };
-  $('productSearch').addEventListener('input',()=>{page=0;renderProducts();});
-  $('recipeFilter').addEventListener('change',()=>{page=0;renderProducts();});
+  $('productSearch').addEventListener('input',()=>{page=0;renderProducts();guideNextStep();});
+  $('recipeFilter').addEventListener('change',()=>{page=0;renderProducts();guideNextStep();});
   $('prevPage').addEventListener('click',()=>{page--;renderProducts();});
   $('nextPage').addEventListener('click',()=>{page++;renderProducts();});
   const render = () => {
@@ -238,6 +261,7 @@ export async function mountApprovedV16Inventory(root, client) {
     }
     renderProducts();
     if (selectedId && !dirty) selectProduct(selectedId,true);
+    guideNextStep();
   };
   const refresh = async () => {
     snapshot = await controller.refresh();
