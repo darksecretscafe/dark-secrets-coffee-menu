@@ -310,7 +310,7 @@ export async function mountApprovedV16Inventory(root, client) {
       const item = findItem(m.item_id);
       const beforeQty = num(m.quantity_after)-num(m.quantity_delta);
       const beforeValue = num(m.value_after)-num(m.value_delta);
-      $('costHistoryRows').append(row([item?.name||'Unknown',quantity(m.quantity_delta),
+      $('costHistoryRows').append(row([item?.name||'Unknown',quantity(m.quantity_delta)+(item?.base_unit?' '+item.base_unit:''),
         '₱'+money(beforeQty>0?beforeValue/beforeQty:0),
         '₱'+money(num(m.quantity_after)>0?num(m.value_after)/num(m.quantity_after):0),m.reference||'—']));
     }
