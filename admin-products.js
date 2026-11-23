@@ -75,6 +75,22 @@
     }
   }
 
+  // Inventory handoff: open the existing product editor; proposed price is never auto-saved.
+  let pendingInventoryReview = null;
+  window.addEventListener('ds:inventory-price-review', event => {
+    const detail=event.detail || {};
+    const product=products.find(p=>String(p.id)===String(detail.productId));
+    if(!product) {
+      document.getElementById('message').textContent='Selected menu product could not be found. Refresh Products and try again.';
+      return;
+    }
+    const desired=Number(detail.proposedPrice);
+    if(!Number.isFinite(desired)||desired<=0||desired>99999.99) return;
+    pendingInventoryReview={productId:String(product.id),proposedPrice:desired};
+    showForm(product);
+    formContainer.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+
   function renderProducts() {
     root.replaceChildren();
 
@@ -365,6 +381,12 @@
     price.input.min = '0.01';
     price.input.max = '99999.99';
     price.input.step = '0.01';
+    if(editing && pendingInventoryReview?.productId===String(product.id)){
+      price.input.value=pendingInventoryReview.proposedPrice.toFixed(2);
+      const info=element('p','Inventory proposed price: ₱'+pendingInventoryReview.proposedPrice.toFixed(2)+'. Review all product details, then Save. Nothing has been changed yet.','ds-product-feedback');
+      form.append(info);
+      price.input.focus();
+    }
 
     const categoryLabel = element('label', 'Category');
     const category = document.createElement('select');
@@ -562,8 +584,15 @@
         }
 
         if (previewUrl) URL.revokeObjectURL(previewUrl);
+        const returnToInventory=editing && pendingInventoryReview?.productId===String(product.id);
+        if(returnToInventory) pendingInventoryReview=null;
         closeForm();
         await loadProducts();
+        if(returnToInventory){
+          window.DS_selectAdminTab?.('Inventory');
+          document.getElementById('tabInventory')?.click();
+          window.dispatchEvent(new CustomEvent('ds:inventory-price-saved',{detail:{productId:String(product.id)}}));
+        }
 
       } catch (error) {
         feedback.textContent =
