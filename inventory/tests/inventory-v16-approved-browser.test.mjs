@@ -64,10 +64,12 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #costHistoryRows')).toContainText('INV-100');
   await page.getByRole('button',{name:'Recipes & Costing',exact:true}).click();
   await expect(page.locator('#inventoryV16 #productRows')).toContainText('Americano');
-  await page.getByRole('button',{name:'Open recipe'}).click();
+  await page.getByRole('button',{name:'Continue'}).click();
   await expect(page.locator('#inventoryV16 #lines')).toContainText('Coffee Beans');
-  await expect(page.locator('#inventoryV16 #estimate')).toContainText('₱4.0000');
+  await expect(page.locator('#inventoryV16 #estimate')).toContainText('₱4.00');
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
+  await expect(page.locator('#inventoryV16 .costing-tile')).toHaveCount(6);
+  await expect(page.locator('#inventoryV16 .requirement')).toHaveCount(4);
   await page.getByRole('button',{name:'Stock Master',exact:true}).click();
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeHidden();
   await page.getByRole('button',{name:'Recipes & Costing',exact:true}).click();
