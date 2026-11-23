@@ -275,8 +275,9 @@ export async function mountApprovedV16Inventory(root, client) {
   };
   const render = () => {
     const b = balances();
-    $('count').textContent = snapshot.items.length;
-    $('low').textContent = snapshot.items.filter(i => num(b.get(i.id)?.quantity) <= num(i.minimum_stock)).length;
+    const activeItems = snapshot.items.filter(i => i.is_active === true);
+    $('count').textContent = activeItems.length;
+    $('low').textContent = activeItems.filter(i => num(b.get(i.id)?.quantity) <= num(i.minimum_stock)).length;
     $('pending').textContent = products.filter(p=>recipeState(p.id)!=='done').length;
     $('stockRows').replaceChildren();
     for (const item of snapshot.items.filter(i=>i.is_active)) {
