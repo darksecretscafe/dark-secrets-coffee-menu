@@ -71,6 +71,8 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
   await expect(page.locator('#inventoryV16 .costing-tile')).toHaveCount(6);
   await expect(page.locator('#inventoryV16 .requirement')).toHaveCount(4);
+  await expect(page.locator('#inventoryV16 #lines button',{hasText:'Edit'})).toHaveCount(1);
+  await expect(page.locator('#inventoryV16 .ds-guide-glow')).toHaveCount(1);
   await expect(page.locator('#inventoryV16 #customPriceInput')).toBeVisible();
   await expect(page.locator('#inventoryV16 #applyCustomPrice')).toBeVisible();
   const layout = await page.locator('#inventoryV16 .shell').evaluate(node=>{
