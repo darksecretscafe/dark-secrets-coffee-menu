@@ -69,6 +69,16 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #lines')).toContainText('Coffee Beans');
   await expect(page.locator('#inventoryV16 #estimate')).toContainText('₱4.00');
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
+  await page.evaluate(()=>{
+    const tab=document.createElement('button');tab.id='tabProducts';document.body.append(tab);
+    window.DS_selectAdminTab=name=>{window.__lastAdminTab=name;};
+    window.addEventListener('ds:inventory-price-review',e=>{window.__priceHandoff=e.detail;});
+  });
+  await page.locator('#inventoryV16 #customPriceInput').fill('125');
+  await page.locator('#inventoryV16 #applyCustomPrice').click();
+  await expect.poll(()=>page.evaluate(()=>window.__lastAdminTab)).toBe('Products');
+  await expect.poll(()=>page.evaluate(()=>window.__priceHandoff?.proposedPrice)).toBe(125);
+  await expect.poll(()=>page.evaluate(()=>window.__priceHandoff?.productId)).toBe('00000000-0000-4000-8000-000000000002');
   await expect(page.locator('#inventoryV16 .costing-tile')).toHaveCount(6);
   await expect(page.locator('#inventoryV16 .requirement')).toHaveCount(4);
   await expect(page.locator('#inventoryV16 #lines button',{hasText:'Edit'})).toHaveCount(1);
