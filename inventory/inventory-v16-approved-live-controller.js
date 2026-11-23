@@ -16,7 +16,7 @@ export async function mountApprovedV16Inventory(root, client) {
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
-  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-receive-unit-fix2', import.meta.url), { cache: 'no-store' });
+  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-receive-unit-label3', import.meta.url), { cache: 'no-store' });
   if (!response.ok) throw new Error('Approved v16 template could not load');
   const template = root.ownerDocument.createElement('template');
   template.innerHTML = await response.text();
@@ -57,7 +57,7 @@ export async function mountApprovedV16Inventory(root, client) {
   const syncReceiveUnit = () => {
     const item = findItem($('receiveItem').value);
     const unitLabel = $('receiveQuantityUnit');
-    if (unitLabel) unitLabel.textContent = item ? '(' + item.base_unit + ')' : '(select stock item)';
+    if (unitLabel) unitLabel.textContent = item ? '— Base unit: ' + item.base_unit : '— No active stock item selected';
   };
   $('receiveItem').addEventListener('change', syncReceiveUnit);
   const costFor = id => num(balances().get(id)?.wac);
