@@ -51,13 +51,6 @@ export async function mountApprovedV16Inventory(root, client) {
   scope.querySelectorAll('[data-tab],[data-go]').forEach(button =>
     button.addEventListener('click', () => showTab(button.dataset.tab || button.dataset.go)));
   const stockForm = $('stockForm');
-  const updateUnits = () => {
-    const units = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[stockForm.elements.namedItem('unit').value] || [];
-    const select = stockForm.elements.namedItem('purchaseUnit');
-    select.replaceChildren(...units.map(u => option(u,u)));
-  };
-  stockForm.elements.namedItem('unit').addEventListener('change', updateUnits);
-  updateUnits();
   const syncReceiveUnit = () => {
     const item = findItem($('receiveItem').value);
     $('purchaseUnit').replaceChildren(...(item ? [option(item.preferred_purchase_unit,item.preferred_purchase_unit)] : []));
@@ -278,20 +271,38 @@ export async function mountApprovedV16Inventory(root, client) {
     message('Inventory loaded from Supabase.');
     return snapshot;
   };
+  // Generated once per pending item, including retries after an uncertain save.
+  let pendingStockCode=null;
+  stockForm.addEventListener('input',()=>{pendingStockCode=null;});
+  stockForm.addEventListener('change',()=>{pendingStockCode=null;});
   stockForm.addEventListener('submit',async event=>{
     event.preventDefault();
     const f=stockForm.elements;
     const minimumStock=Number(f.namedItem('min').value);
-    if (!f.namedItem('code').value.trim() || !f.namedItem('category').value.trim() || !f.namedItem('name').value.trim() ||
-        !Number.isFinite(minimumStock) || minimumStock<0) return message('Enter valid stock item details.');
+    const name=f.namedItem('name').value.trim();
+    const type=f.namedItem('type').value;
+    const baseUnit=f.namedItem('unit').value;
+    if(!name || !['ingredient','packaging'].includes(type) ||
+       !['g','ml','pcs'].includes(baseUnit) ||
+       !Number.isFinite(minimumStock)||minimumStock<0)
+      return message('Enter valid stock item details.');
+    if(!pendingStockCode){
+      const uuid=globalThis.crypto?.randomUUID?.();
+      if(!uuid)return message('Secure item code generation unavailable.');
+      pendingStockCode='DSC-'+uuid;
+    }
     const button=stockForm.querySelector('button[type="submit"],button:not([type])');
     button.disabled=true;
-    try {
-      const result=await controller.saveItem({id:null,code:f.namedItem('code').value.trim(),name:f.namedItem('name').value.trim(),
-        category:f.namedItem('category').value.trim(),type:f.namedItem('type').value,baseUnit:f.namedItem('unit').value,
-        purchaseUnit:f.namedItem('purchaseUnit').value,minimumStock,active:true,supplier:f.namedItem('supplier').value.trim()||null});
-      snapshot=result.snapshot;render();stockForm.reset();updateUnits();message('Stock item saved to Supabase.');
-    } catch(e){message('Save failed: '+e.message);}finally{button.disabled=false;}
+    try{
+      const result=await controller.saveItem({
+        id:null,code:pendingStockCode,name,category:type==='ingredient'?'Ingredient':'Packaging',
+        type,baseUnit,purchaseUnit:baseUnit,minimumStock,active:true,supplier:null
+      });
+      snapshot=result.snapshot;render();stockForm.reset();
+      const createdCode=pendingStockCode;pendingStockCode=null;
+      message('Stock item saved to Supabase. Generated item code: '+createdCode);
+    }catch(e){message('Save not confirmed: '+e.message+'. Check registered stock items before retrying.');}
+    finally{button.disabled=false;}
   });
   $('receiveForm').addEventListener('submit',async event=>{
     event.preventDefault();
