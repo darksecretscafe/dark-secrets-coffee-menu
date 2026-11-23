@@ -68,5 +68,9 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #lines')).toContainText('Coffee Beans');
   await expect(page.locator('#inventoryV16 #estimate')).toContainText('₱4.0000');
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
+  await page.getByRole('button',{name:'Stock Master',exact:true}).click();
+  await expect(page.locator('#inventoryV16 #priceApproval')).toBeHidden();
+  await page.getByRole('button',{name:'Recipes & Costing',exact:true}).click();
+  await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
   expect(errors).toEqual([]);
 });
