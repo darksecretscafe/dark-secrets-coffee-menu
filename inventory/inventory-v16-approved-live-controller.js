@@ -16,7 +16,7 @@ export async function mountApprovedV16Inventory(root, client) {
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
-  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-receive-search', import.meta.url), { cache: 'no-store' });
+  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-item-name-size', import.meta.url), { cache: 'no-store' });
   if (!response.ok) throw new Error('Approved v16 template could not load');
   const template = root.ownerDocument.createElement('template');
   template.innerHTML = await response.text();
