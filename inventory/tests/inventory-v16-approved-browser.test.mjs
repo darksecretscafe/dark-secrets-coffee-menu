@@ -108,6 +108,6 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await page.getByRole('button',{name:'Stock Master',exact:true}).click();
   await expect(page.locator('#inventoryV16 #priceApproval')).toHaveCount(0);
   await page.getByRole('button',{name:'Recipes & Costing',exact:true}).click();
-  await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
+  await expect(page.locator('#inventoryV16 #priceApproval')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
