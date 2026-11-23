@@ -11,9 +11,9 @@ test('original approved v16 sections are preserved without demo actions',()=>{
   for (const name of ['Dashboard','Stock Master','Receive Stock','Recipes & Costing',
     'Recipe Management & Costing','Cost History']) assert.ok(html.includes(name),name);
   for (const id of ['stockForm','receiveForm','productRows','recipeEditor','recipeForm',
-    'lines','estimate','reviewPrice','approveRecipe','message'])
+    'lines','estimate','saveRecipeDraft','complete','message'])
     assert.ok(html.includes('id="'+id+'"'),id);
-  assert.doesNotMatch(html,/id="priceConfirmed"|type="checkbox"/);
+  assert.doesNotMatch(html,/id="priceConfirmed"|type="checkbox"|id="priceApproval"|id="reviewPrice"|id="approveRecipe"/);
   assert.doesNotMatch(js,/priceConfirmed/);
   assert.doesNotMatch(html,/Clear demo|Run Menu Sync Tests|Simulate Menu Management|Restore Sample Menu|DRAFT ONLY|illustrative examples/);
 });
