@@ -102,7 +102,7 @@ export async function mountApprovedV16Inventory(root, client) {
     dirty = false;
     $('priceConfirmed').checked = false;
     $('recipeEditor').hidden = false;
-    $('priceApproval').hidden = false;
+    $('priceApproval').hidden = $('recipes').hidden;
     $('selected').textContent = product.name + ' · ₱' + num(product.price).toFixed(2);
     showLines();
   };
