@@ -12,7 +12,7 @@ export async function mountApprovedV16Inventory(root, client) {
     const style = doc.createElement('link');
     style.rel = 'stylesheet';
     style.dataset.inventoryV16Style = 'true';
-    style.href = new URL('./inventory-v16-approved-style-WIP.css', import.meta.url).href;
+    style.href = new URL('./inventory-v16-approved-style-WIP.css?v=20261123-dashboard-contrast', import.meta.url).href;
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
