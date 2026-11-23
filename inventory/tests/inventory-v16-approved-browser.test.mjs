@@ -76,7 +76,8 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await page.getByRole('button',{name:'Continue'}).click();
   await expect(page.locator('#inventoryV16 #lines')).toContainText('Coffee Beans');
   await expect(page.locator('#inventoryV16 #estimate')).toContainText('₱4.00');
-  await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
+  await expect(page.locator('#inventoryV16 #complete')).toHaveText('Review & Approve Recipe');
+  await expect(page.locator('#inventoryV16 #priceApproval')).toHaveCount(0);
   await page.evaluate(()=>{
     const tab=document.createElement('button');tab.id='tabProducts';document.body.append(tab);
     window.DS_selectAdminTab=name=>{window.__lastAdminTab=name;};
@@ -105,7 +106,7 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   expect(layout.width).toBeLessThanOrEqual(layout.viewport);
   await page.screenshot({path:'test-results/approved-v16-desktop.png',fullPage:true});
   await page.getByRole('button',{name:'Stock Master',exact:true}).click();
-  await expect(page.locator('#inventoryV16 #priceApproval')).toBeHidden();
+  await expect(page.locator('#inventoryV16 #priceApproval')).toHaveCount(0);
   await page.getByRole('button',{name:'Recipes & Costing',exact:true}).click();
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
   expect(errors).toEqual([]);
