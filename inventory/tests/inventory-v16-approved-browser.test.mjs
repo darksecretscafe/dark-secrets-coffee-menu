@@ -71,6 +71,14 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
   await expect(page.locator('#inventoryV16 .costing-tile')).toHaveCount(6);
   await expect(page.locator('#inventoryV16 .requirement')).toHaveCount(4);
+  await expect(page.locator('#inventoryV16 #customPriceInput')).toBeVisible();
+  await expect(page.locator('#inventoryV16 #applyCustomPrice')).toBeVisible();
+  const layout = await page.locator('#inventoryV16 .shell').evaluate(node=>{
+    const rect=node.getBoundingClientRect();
+    return {width:rect.width,viewport:document.documentElement.clientWidth};
+  });
+  expect(layout.width).toBeGreaterThan(900);
+  expect(layout.width).toBeLessThanOrEqual(layout.viewport);
   await page.screenshot({path:'test-results/approved-v16-desktop.png',fullPage:true});
   await page.getByRole('button',{name:'Stock Master',exact:true}).click();
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeHidden();
