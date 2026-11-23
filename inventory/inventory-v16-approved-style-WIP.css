@@ -52,3 +52,8 @@ width:100%;max-width:1280px;margin-left:auto;margin-right:auto;
 #inventoryV16 #recipeEditor .grid label{min-width:0}
 #inventoryV16 #lines button.secondary{background:#fff;color:#382a20;border:1px solid #d5c4b5;padding:9px 13px}
 @media(prefers-reduced-motion:reduce){#inventoryV16 .ds-guide-glow:not(:disabled){animation:none}}
+
+/* Dashboard KPI contrast: prevent inherited white text on pale cards. */
+#inventoryV16 #home .stat{background:#f5f0ea!important;color:#382a20!important;border:1px solid #e6ded5}
+#inventoryV16 #home .stat strong{color:#231a14!important;font-weight:750}
+#inventoryV16 #home .stat small,#inventoryV16 #home .stat span{color:#695345!important}
