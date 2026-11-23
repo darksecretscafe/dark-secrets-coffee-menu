@@ -60,6 +60,14 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #count')).toHaveText('1');
   await page.getByRole('button',{name:'Stock Master',exact:true}).click();
   await expect(page.locator('#inventoryV16 #stockRows')).toContainText('Coffee Beans');
+  await expect(page.locator('#inventoryV16 #stockRows button',{hasText:'Edit'})).toHaveCount(1);
+  await expect(page.locator('#inventoryV16 #stockRows button',{hasText:'Delete'})).toHaveCount(1);
+  await page.locator('#inventoryV16 #stockRows button',{hasText:'Edit'}).click();
+  await expect(page.locator('#inventoryV16 #saveStockItem')).toHaveText('Save changes');
+  await expect(page.locator('#inventoryV16 #stockForm [name="name"]')).toHaveValue('Coffee Beans');
+  await expect(page.locator('#inventoryV16 #stockForm [name="unit"]')).toBeDisabled();
+  await page.locator('#inventoryV16 #cancelStockEdit').click();
+  await expect(page.locator('#inventoryV16 #saveStockItem')).toHaveText('Add stock item');
   await expect(page.locator('#inventoryV16 #stockRows')).toContainText('0.2000');
   await page.getByRole('button',{name:'Receive Stock',exact:true}).click();
   await expect(page.locator('#inventoryV16 #costHistoryRows')).toContainText('INV-100');
