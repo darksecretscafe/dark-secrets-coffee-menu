@@ -24,6 +24,7 @@ test.afterAll(async()=>{if(server)await new Promise(ok=>server.close(ok));});
 
 test('approved v16 loads, switches tabs and displays persisted mock stock and recipes',async({page})=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.setViewportSize({width:1440,height:900});
   await page.goto('http://127.0.0.1:'+server.address().port+'/');
   await page.evaluate(async()=>{
     const bean='00000000-0000-4000-8000-000000000001';
@@ -70,6 +71,7 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeVisible();
   await expect(page.locator('#inventoryV16 .costing-tile')).toHaveCount(6);
   await expect(page.locator('#inventoryV16 .requirement')).toHaveCount(4);
+  await page.screenshot({path:'test-results/approved-v16-desktop.png',fullPage:true});
   await page.getByRole('button',{name:'Stock Master',exact:true}).click();
   await expect(page.locator('#inventoryV16 #priceApproval')).toBeHidden();
   await page.getByRole('button',{name:'Recipes & Costing',exact:true}).click();
