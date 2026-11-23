@@ -16,7 +16,7 @@ export async function mountApprovedV16Inventory(root, client) {
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
-  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-receive-unit-label3', import.meta.url), { cache: 'no-store' });
+  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-receive-search', import.meta.url), { cache: 'no-store' });
   if (!response.ok) throw new Error('Approved v16 template could not load');
   const template = root.ownerDocument.createElement('template');
   template.innerHTML = await response.text();
@@ -59,7 +59,14 @@ export async function mountApprovedV16Inventory(root, client) {
     const unitLabel = $('receiveQuantityUnit');
     if (unitLabel) unitLabel.textContent = item ? '— Base unit: ' + item.base_unit : '— No active stock item selected';
   };
-  $('receiveItem').addEventListener('change', syncReceiveUnit);
+  const syncReceiveSelection = () => {
+    const query=$('receiveItemSearch').value.trim().toLocaleLowerCase();
+    const matches=snapshot.items.filter(i=>i.is_active&&i.name.trim().toLocaleLowerCase()===query);
+    $('receiveItem').value=matches.length===1?String(matches[0].id):'';
+    syncReceiveUnit();
+  };
+  $('receiveItemSearch').addEventListener('input',syncReceiveSelection);
+  $('receiveItemSearch').addEventListener('change',syncReceiveSelection);
   const costFor = id => num(balances().get(id)?.wac);
   const guideNextStep = () => {
     scope.querySelectorAll('.ds-guide-glow').forEach(node=>node.classList.remove('ds-guide-glow'));
@@ -296,11 +303,18 @@ export async function mountApprovedV16Inventory(root, client) {
     const previous = $('receiveItem').value;
     const previousIngredient = $('recipeItem').value;
     const active = snapshot.items.filter(i => i.is_active);
-    $('receiveItem').replaceChildren(...active.map(i=>option(i.id,i.name)));
+    $('receiveItemSuggestions').replaceChildren(...active.map(i=>option(i.name,i.name)));
     $('recipeItem').replaceChildren(...active.map(i=>option(i.id,i.name+' ('+i.base_unit+')')));
-    if (active.some(i=>i.id===previous)) $('receiveItem').value=previous;
+    if (active.some(i=>String(i.id)===String(previous))) {
+      $('receiveItem').value=previous;
+      $('receiveItemSearch').value=active.find(i=>String(i.id)===String(previous)).name;
+    } else {
+      $('receiveItem').value='';
+      if(!active.some(i=>i.name.toLocaleLowerCase()===$('receiveItemSearch').value.trim().toLocaleLowerCase()))
+        $('receiveItemSearch').value='';
+    }
     if (active.some(i=>i.id===previousIngredient)) $('recipeItem').value=previousIngredient;
-    syncReceiveUnit();
+    syncReceiveSelection();
     const receipts = snapshot.movements.filter(m=>m.movement_type==='receive')
       .slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')) ||
         String(b.id).localeCompare(String(a.id))).slice(0,20);
@@ -368,6 +382,7 @@ export async function mountApprovedV16Inventory(root, client) {
   });
   $('receiveForm').addEventListener('submit',async event=>{
     event.preventDefault();
+    syncReceiveSelection();
     const item=findItem($('receiveItem').value),quantity=Number($('receiveQty').value),
       totalCost=Number($('receiveCost').value),reference=$('reference').value.trim();
     if (!item || !Number.isFinite(quantity)||quantity<=0||!Number.isFinite(totalCost)||
