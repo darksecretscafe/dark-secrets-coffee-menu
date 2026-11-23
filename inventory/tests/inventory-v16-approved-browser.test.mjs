@@ -79,6 +79,10 @@ test('approved v16 loads, switches tabs and displays persisted mock stock and re
   await expect.poll(()=>page.evaluate(()=>window.__lastAdminTab)).toBe('Products');
   await expect.poll(()=>page.evaluate(()=>window.__priceHandoff?.proposedPrice)).toBe(125);
   await expect.poll(()=>page.evaluate(()=>window.__priceHandoff?.productId)).toBe('00000000-0000-4000-8000-000000000002');
+  await expect(page.locator('#inventoryV16 #stockForm [name="code"]')).toHaveCount(0);
+  await expect(page.locator('#inventoryV16 #stockForm [name="category"]')).toHaveCount(0);
+  await expect(page.locator('#inventoryV16 #stockForm [name="supplier"]')).toHaveCount(0);
+  await expect(page.locator('#inventoryV16 #stockForm .grid label')).toHaveCount(4);
   await expect(page.locator('#inventoryV16 .costing-tile')).toHaveCount(6);
   await expect(page.locator('#inventoryV16 .requirement')).toHaveCount(4);
   await expect(page.locator('#inventoryV16 #lines button',{hasText:'Edit'})).toHaveCount(1);
