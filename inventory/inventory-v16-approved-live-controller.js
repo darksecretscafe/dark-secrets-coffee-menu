@@ -12,7 +12,7 @@ export async function mountApprovedV16Inventory(root, client) {
     const style = doc.createElement('link');
     style.rel = 'stylesheet';
     style.dataset.inventoryV16Style = 'true';
-    style.href = new URL('./inventory-v16-approved-style-WIP.css?v=20261123-guided2', import.meta.url).href;
+    style.href = new URL('./inventory-v16-approved-style-WIP.css', import.meta.url).href;
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
@@ -33,7 +33,6 @@ export async function mountApprovedV16Inventory(root, client) {
   const message = text => { $('message').textContent = text; };
   const num = value => Number(value || 0);
   const money = value => num(value).toFixed(2);
-  const quantity = value => num(value).toFixed(4);
   let snapshot, products = [], selectedId = null, lines = [], dirty = false, page = 0;
   let pendingReceipt = null;
   const pageSize = 5;
@@ -54,13 +53,6 @@ export async function mountApprovedV16Inventory(root, client) {
   scope.querySelectorAll('[data-tab],[data-go]').forEach(button =>
     button.addEventListener('click', () => showTab(button.dataset.tab || button.dataset.go)));
   const stockForm = $('stockForm');
-  const updateUnits = () => {
-    const units = {g:['g','kg'],ml:['ml','l'],pcs:['pcs']}[stockForm.elements.namedItem('unit').value] || [];
-    const select = stockForm.elements.namedItem('purchaseUnit');
-    select.replaceChildren(...units.map(u => option(u,u)));
-  };
-  stockForm.elements.namedItem('unit').addEventListener('change', updateUnits);
-  updateUnits();
   const syncReceiveUnit = () => {
     const item = findItem($('receiveItem').value);
     $('purchaseUnit').replaceChildren(...(item ? [option(item.preferred_purchase_unit,item.preferred_purchase_unit)] : []));
@@ -136,9 +128,15 @@ export async function mountApprovedV16Inventory(root, client) {
     const review=el('button','Review in Menu Management');review.type='button';review.id='applyCustomPrice';
     review.addEventListener('click',()=>{
       const desired=Number(proposed.value);
-      if(!Number.isFinite(desired)||desired<=0) return message('Enter a valid proposed selling price.');
-      message('Current menu price is ₱'+money(price)+'. To change it to ₱'+money(desired)+
-        ', use the existing Products tab in Menu Management, save the new price, then return here and refresh. Inventory does not change menu prices.');
+      if(!Number.isFinite(desired)||desired<=0||desired>99999.99)
+        return message('Enter a valid proposed selling price (₱0.01–₱99,999.99).');
+      const tab=doc.getElementById('tabProducts');
+      if(!tab || typeof doc.defaultView?.DS_selectAdminTab!=='function')
+        return message('Menu Management is unavailable. No price was changed.');
+      doc.defaultView.DS_selectAdminTab('Products');
+      doc.defaultView.dispatchEvent(new CustomEvent('ds:inventory-price-review',{
+        detail:{productId:String(selectedId),proposedPrice:desired}
+      }));
     });
     const reset=el('button','Reset Proposal');reset.type='button';reset.id='resetCustomPrice';
     reset.addEventListener('click',()=>{proposed.value=price.toFixed(2);});
@@ -238,7 +236,7 @@ export async function mountApprovedV16Inventory(root, client) {
     $('stockRows').replaceChildren();
     for (const item of snapshot.items) {
       const balance = b.get(item.id);
-      $('stockRows').append(row([item.name, quantity(balance?.quantity) + ' ' + item.base_unit,
+      $('stockRows').append(row([item.name, money(balance?.quantity) + ' ' + item.base_unit,
         '₱' + money(balance?.wac), num(balance?.quantity)<=num(item.minimum_stock)?'Low':'OK']));
     }
     const previous = $('receiveItem').value;
@@ -258,7 +256,7 @@ export async function mountApprovedV16Inventory(root, client) {
       const item = findItem(m.item_id);
       const beforeQty = num(m.quantity_after)-num(m.quantity_delta);
       const beforeValue = num(m.value_after)-num(m.value_delta);
-      $('costHistoryRows').append(row([item?.name||'Unknown',quantity(m.quantity_delta),
+      $('costHistoryRows').append(row([item?.name||'Unknown',money(m.quantity_delta),
         '₱'+money(beforeQty>0?beforeValue/beforeQty:0),
         '₱'+money(num(m.quantity_after)>0?num(m.value_after)/num(m.quantity_after):0),m.reference||'—']));
     }
@@ -275,20 +273,38 @@ export async function mountApprovedV16Inventory(root, client) {
     message('Inventory loaded from Supabase.');
     return snapshot;
   };
+  // Generated once per pending item, including retries after an uncertain save.
+  let pendingStockCode=null;
+  stockForm.addEventListener('input',()=>{pendingStockCode=null;});
+  stockForm.addEventListener('change',()=>{pendingStockCode=null;});
   stockForm.addEventListener('submit',async event=>{
     event.preventDefault();
     const f=stockForm.elements;
     const minimumStock=Number(f.namedItem('min').value);
-    if (!f.namedItem('code').value.trim() || !f.namedItem('category').value.trim() || !f.namedItem('name').value.trim() ||
-        !Number.isFinite(minimumStock) || minimumStock<0) return message('Enter valid stock item details.');
+    const name=f.namedItem('name').value.trim();
+    const type=f.namedItem('type').value;
+    const baseUnit=f.namedItem('unit').value;
+    if(!name || !['ingredient','packaging'].includes(type) ||
+       !['g','ml','pcs'].includes(baseUnit) ||
+       !Number.isFinite(minimumStock)||minimumStock<0)
+      return message('Enter valid stock item details.');
+    if(!pendingStockCode){
+      const uuid=globalThis.crypto?.randomUUID?.();
+      if(!uuid)return message('Secure item code generation unavailable.');
+      pendingStockCode='DSC-'+uuid;
+    }
     const button=stockForm.querySelector('button[type="submit"],button:not([type])');
     button.disabled=true;
-    try {
-      const result=await controller.saveItem({id:null,code:f.namedItem('code').value.trim(),name:f.namedItem('name').value.trim(),
-        category:f.namedItem('category').value.trim(),type:f.namedItem('type').value,baseUnit:f.namedItem('unit').value,
-        purchaseUnit:f.namedItem('purchaseUnit').value,minimumStock,active:true,supplier:f.namedItem('supplier').value.trim()||null});
-      snapshot=result.snapshot;render();stockForm.reset();updateUnits();message('Stock item saved to Supabase.');
-    } catch(e){message('Save failed: '+e.message);}finally{button.disabled=false;}
+    try{
+      const result=await controller.saveItem({
+        id:null,code:pendingStockCode,name,category:type==='ingredient'?'Ingredient':'Packaging',
+        type,baseUnit,purchaseUnit:baseUnit,minimumStock,active:true,supplier:null
+      });
+      snapshot=result.snapshot;render();stockForm.reset();
+      const createdCode=pendingStockCode;pendingStockCode=null;
+      message('Stock item saved to Supabase. Generated item code: '+createdCode);
+    }catch(e){message('Save not confirmed: '+e.message+'. Check registered stock items before retrying.');}
+    finally{button.disabled=false;}
   });
   $('receiveForm').addEventListener('submit',async event=>{
     event.preventDefault();
@@ -349,6 +365,15 @@ export async function mountApprovedV16Inventory(root, client) {
        Number(r.price_review_revision)!==Number(r.recipe_revision))
       return message('Save the recipe and review its current saved price before approval.');
     mutate('approveRecipe',selectedId,$('approveRecipe'));
+  });
+  doc.defaultView?.addEventListener('ds:inventory-price-saved',async event=>{
+    if(String(event.detail?.productId)!==String(selectedId)) return;
+    try{
+      await refresh();
+      showTab('recipes');
+      selectProduct(selectedId,true);
+      message('Menu price saved. Review the updated recipe costing, then confirm the saved price before recipe approval.');
+    }catch(error){message('Menu price saved, but Inventory refresh failed: '+error.message);}
   });
   await refresh();
   return Object.freeze({refresh,controller});
