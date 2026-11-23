@@ -5,8 +5,6 @@ import { calculateInventoryCosting } from './inventory-costing-snapshot-DRAFT.js
 // Mounts the original approved v16 HTML structure; no replacement layout or sample data.
 export async function mountApprovedV16Inventory(root, client) {
   const session = await createInventoryAdminSessionGateway(client);
-  root.classList.remove('panel');
-  root.style.width='100%';root.style.maxWidth='none';root.style.margin='0';root.style.padding='0';
   const doc = root.ownerDocument;
   if (!doc.querySelector('link[data-inventory-v16-style]')) {
     const style = doc.createElement('link');
@@ -16,7 +14,7 @@ export async function mountApprovedV16Inventory(root, client) {
     doc.head.append(style);
   }
   const controller = createInventoryPersistenceController(session);
-  const response = await fetch(new URL('./inventory-v16-approved-live-template.html', import.meta.url));
+  const response = await fetch(new URL('./inventory-v16-approved-live-template.html?v=20261123-no-checkbox', import.meta.url));
   if (!response.ok) throw new Error('Approved v16 template could not load');
   const template = root.ownerDocument.createElement('template');
   template.innerHTML = await response.text();
@@ -32,7 +30,7 @@ export async function mountApprovedV16Inventory(root, client) {
   };
   const message = text => { $('message').textContent = text; };
   const num = value => Number(value || 0);
-  const money = value => num(value).toFixed(2);
+  const money = value => num(value).toFixed(4);
   let snapshot, products = [], selectedId = null, lines = [], dirty = false, page = 0;
   let pendingReceipt = null;
   const pageSize = 5;
@@ -84,13 +82,13 @@ export async function mountApprovedV16Inventory(root, client) {
       const cell = el('td');
       const remove = el('button','Remove'); remove.type = 'button'; remove.className = 'secondary';
       remove.addEventListener('click', () => {
-        lines.splice(index,1); dirty = true; $('priceConfirmed').checked = false; showLines();
+        lines.splice(index,1); dirty = true; showLines();
       });
       const edit = el('button','Edit');edit.type='button';edit.className='secondary';
       edit.addEventListener('click',()=>{
         $('recipeItem').value=String(line.itemId);
         $('recipeQty').value=String(line.quantityBase);
-        lines.splice(index,1);dirty=true;$('priceConfirmed').checked=false;showLines();
+        lines.splice(index,1);dirty=true;showLines();
         $('recipeQty').focus();guideNextStep();
         message('Edit quantity, then click Add selected ingredient to update this line.');
       });
@@ -177,7 +175,7 @@ export async function mountApprovedV16Inventory(root, client) {
       return {itemId:l.item_id,quantityBase:num(l.quantity_base)};
     });
     dirty = false;
-    $('priceConfirmed').checked = false;
+   
     $('recipeEditor').hidden = false;
     $('priceApproval').hidden = $('recipes').hidden;
     $('selected').textContent = 'Selected: '+product.name+' · Product ID: '+product.id;
@@ -228,16 +226,66 @@ export async function mountApprovedV16Inventory(root, client) {
   $('recipeFilter').addEventListener('change',()=>{page=0;renderProducts();guideNextStep();});
   $('prevPage').addEventListener('click',()=>{page--;renderProducts();});
   $('nextPage').addEventListener('click',()=>{page++;renderProducts();});
+  let editingStockId=null;
+  const stockItemPayload=(item,overrides={})=>({
+    id:item.id,code:item.item_code,name:item.name,category:item.category,
+    type:item.item_type,baseUnit:item.base_unit,
+    purchaseUnit:item.preferred_purchase_unit,minimumStock:num(item.minimum_stock),
+    active:item.is_active,supplier:item.supplier??null,brand:item.brand??null,
+    notes:item.notes??null,...overrides
+  });
+  const cancelStockEdit=()=>{
+    editingStockId=null;stockForm.reset();
+    $('saveStockItem').textContent='Add stock item';
+    $('cancelStockEdit').hidden=true;
+    stockForm.elements.namedItem('unit').disabled=false;
+  };
+  $('cancelStockEdit').addEventListener('click',cancelStockEdit);
+  const editStockItem=item=>{
+    editingStockId=item.id;
+    const f=stockForm.elements;
+    f.namedItem('name').value=item.name;
+    f.namedItem('type').value=item.item_type;
+    f.namedItem('unit').value=item.base_unit;
+    f.namedItem('min').value=String(item.minimum_stock);
+    // Units are immutable once registered: movements and recipe lines use base units.
+    f.namedItem('unit').disabled=true;
+    $('saveStockItem').textContent='Save changes';
+    $('cancelStockEdit').hidden=false;
+    stockForm.scrollIntoView({behavior:'smooth',block:'start'});
+    f.namedItem('name').focus();
+  };
+  const deleteStockItem=async(item,button)=>{
+    const used=(snapshot.movements||[]).some(m=>String(m.item_id)===String(item.id)) ||
+      (snapshot.recipeLines||snapshot.recipe_lines||[]).some(l=>String(l.item_id)===String(item.id));
+    if(!doc.defaultView.confirm('Remove "'+item.name+'" from active Stock Master? This archives the item without deleting stock history or recipe records.'))return;
+    button.disabled=true;
+    try{
+      const result=await controller.saveItem(stockItemPayload(item,{active:false}));
+      snapshot=result.snapshot;
+      if(editingStockId===item.id)cancelStockEdit();
+      render();
+      message('Stock item archived. Historical transactions and recipes remain intact.'+(used?' Item had existing usage.':''));
+    }catch(e){message('Remove failed: '+e.message);}
+    finally{button.disabled=false;}
+  };
   const render = () => {
     const b = balances();
     $('count').textContent = snapshot.items.length;
     $('low').textContent = snapshot.items.filter(i => num(b.get(i.id)?.quantity) <= num(i.minimum_stock)).length;
     $('pending').textContent = products.filter(p=>recipeState(p.id)!=='done').length;
     $('stockRows').replaceChildren();
-    for (const item of snapshot.items) {
-      const balance = b.get(item.id);
-      $('stockRows').append(row([item.name, money(balance?.quantity) + ' ' + item.base_unit,
-        '₱' + money(balance?.wac), num(balance?.quantity)<=num(item.minimum_stock)?'Low':'OK']));
+    for (const item of snapshot.items.filter(i=>i.is_active)) {
+      const balance=b.get(item.id);
+      const tr=row([item.name,money(balance?.quantity)+' '+item.base_unit,
+        '₱'+money(balance?.wac),num(balance?.quantity)<=num(item.minimum_stock)?'Low':'OK']);
+      const actions=el('td');
+      const edit=el('button','Edit');edit.type='button';edit.className='secondary';
+      edit.addEventListener('click',()=>editStockItem(item));
+      const remove=el('button','Delete');remove.type='button';remove.className='secondary';
+      remove.title='Archive this item; preserve receiving and recipe history';
+      remove.addEventListener('click',()=>deleteStockItem(item,remove));
+      actions.append(edit,remove);tr.append(actions);$('stockRows').append(tr);
     }
     const previous = $('receiveItem').value;
     const previousIngredient = $('recipeItem').value;
@@ -288,7 +336,9 @@ export async function mountApprovedV16Inventory(root, client) {
        !['g','ml','pcs'].includes(baseUnit) ||
        !Number.isFinite(minimumStock)||minimumStock<0)
       return message('Enter valid stock item details.');
-    if(!pendingStockCode){
+    const editingItem=editingStockId?findItem(editingStockId):null;
+    if(editingStockId&&!editingItem)return message('Item no longer exists. Refresh Stock Master.');
+    if(!editingItem&&!pendingStockCode){
       const uuid=globalThis.crypto?.randomUUID?.();
       if(!uuid)return message('Secure item code generation unavailable.');
       pendingStockCode='DSC-'+uuid;
@@ -297,12 +347,16 @@ export async function mountApprovedV16Inventory(root, client) {
     button.disabled=true;
     try{
       const result=await controller.saveItem({
-        id:null,code:pendingStockCode,name,category:type==='ingredient'?'Ingredient':'Packaging',
-        type,baseUnit,purchaseUnit:baseUnit,minimumStock,active:true,supplier:null
+        id:editingItem?.id??null,code:editingItem?.item_code??pendingStockCode,name,
+        category:type==='ingredient'?'Ingredient':'Packaging',type,
+        baseUnit:editingItem?.base_unit??baseUnit,
+        purchaseUnit:editingItem?.preferred_purchase_unit??baseUnit,
+        minimumStock,active:true,supplier:editingItem?.supplier??null,
+        brand:editingItem?.brand??null,notes:editingItem?.notes??null
       });
-      snapshot=result.snapshot;render();stockForm.reset();
-      const createdCode=pendingStockCode;pendingStockCode=null;
-      message('Stock item saved to Supabase. Generated item code: '+createdCode);
+      snapshot=result.snapshot;const createdCode=editingItem?.item_code??pendingStockCode;
+      cancelStockEdit();pendingStockCode=null;render();
+      message(editingItem?'Stock item changes saved. Item code unchanged.':'Stock item saved to Supabase. Generated item code: '+createdCode);
     }catch(e){message('Save not confirmed: '+e.message+'. Check registered stock items before retrying.');}
     finally{button.disabled=false;}
   });
@@ -337,7 +391,7 @@ export async function mountApprovedV16Inventory(root, client) {
     if(!selectedId||!item||!item.is_active||!Number.isFinite(quantityBase)||quantityBase<=0||
        lines.some(l=>l.itemId===item.id))return message('Select a new ingredient and positive quantity.');
     lines.push({itemId:item.id,quantityBase});
-    dirty=true;$('priceConfirmed').checked=false;$('recipeQty').value='';showLines();
+    dirty=true;$('recipeQty').value='';showLines();
   });
   const mutate = async (method,payload,button) => {
     button.disabled=true;
@@ -345,7 +399,7 @@ export async function mountApprovedV16Inventory(root, client) {
       const result=await controller[method](payload);
       snapshot=result.snapshot;
       if(method==='saveRecipe'){dirty=false;selectProduct(selectedId,true);}
-      else $('priceConfirmed').checked=false;
+      else
       render();
       message(method==='saveRecipe'?'Recipe saved to Supabase.':
         method==='reviewRecipePrice'?'Saved price reviewed.':'Recipe approved.');
@@ -356,12 +410,12 @@ export async function mountApprovedV16Inventory(root, client) {
     mutate('saveRecipe',{productId:selectedId,lines:lines.map(l=>({...l})),targetMarginPercent:null},$('complete'));
   });
   $('reviewPrice').addEventListener('click',()=>{
-    if(dirty||!$('priceConfirmed').checked)return message('Save changes and confirm the saved price first.');
+    if(dirty||!recipe(selectedId))return message('Save changes and confirm the saved price first.');
     mutate('reviewRecipePrice',selectedId,$('reviewPrice'));
   });
   $('approveRecipe').addEventListener('click',()=>{
     const r=recipe(selectedId);
-    if(dirty||!$('priceConfirmed').checked||!r||!r.price_reviewed_at||
+    if(dirty||!r||!r.price_reviewed_at||
        Number(r.price_review_revision)!==Number(r.recipe_revision))
       return message('Save the recipe and review its current saved price before approval.');
     mutate('approveRecipe',selectedId,$('approveRecipe'));
