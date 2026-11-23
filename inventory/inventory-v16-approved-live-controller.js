@@ -32,7 +32,8 @@ export async function mountApprovedV16Inventory(root, client) {
   };
   const message = text => { $('message').textContent = text; };
   const num = value => Number(value || 0);
-  const money = value => num(value).toFixed(4);
+  const money = value => num(value).toFixed(2);
+  const quantity = value => num(value).toFixed(4);
   let snapshot, products = [], selectedId = null, lines = [], dirty = false, page = 0;
   let pendingReceipt = null;
   const pageSize = 5;
@@ -237,7 +238,7 @@ export async function mountApprovedV16Inventory(root, client) {
     $('stockRows').replaceChildren();
     for (const item of snapshot.items) {
       const balance = b.get(item.id);
-      $('stockRows').append(row([item.name, money(balance?.quantity) + ' ' + item.base_unit,
+      $('stockRows').append(row([item.name, quantity(balance?.quantity) + ' ' + item.base_unit,
         '₱' + money(balance?.wac), num(balance?.quantity)<=num(item.minimum_stock)?'Low':'OK']));
     }
     const previous = $('receiveItem').value;
@@ -257,7 +258,7 @@ export async function mountApprovedV16Inventory(root, client) {
       const item = findItem(m.item_id);
       const beforeQty = num(m.quantity_after)-num(m.quantity_delta);
       const beforeValue = num(m.value_after)-num(m.value_delta);
-      $('costHistoryRows').append(row([item?.name||'Unknown',money(m.quantity_delta),
+      $('costHistoryRows').append(row([item?.name||'Unknown',quantity(m.quantity_delta),
         '₱'+money(beforeQty>0?beforeValue/beforeQty:0),
         '₱'+money(num(m.quantity_after)>0?num(m.value_after)/num(m.quantity_after):0),m.reference||'—']));
     }
